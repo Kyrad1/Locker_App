@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta por RUT</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .resultado { margin-top: 20px; padding: 10px; border: 1px solid #ccc; display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>Consulta de Usuarios</h2>
+    <input type="text" id="rutInput" placeholder="12345678-K">
+    <button onclick="buscarPorRut()">Consultar</button>
+
+    <div id="resultado" class="resultado"></div>
+
+    <script>
+        async function buscarPorRut() {
+            const rut = document.getElementById('rutInput').value.trim();
+            const divResultado = document.getElementById('resultado');
+            
+            if (!rut) return alert('Por favor, ingresa un RUT');
+
+            try {
+                // Llamada a la API del backend
+                const respuesta = await fetch(`http://localhost:3000/api/usuarios/${rut}`);
+                const datos = await respuesta.json();
+
+                divResultado.style.display = 'block';
+
+                if (respuesta.status === 404) {
+                    divResultado.innerHTML = `<p style="color:red;">${datos.mensaje}</p>`;
+                } else if (respuesta.ok) {
+                    // Muestra los datos del usuario (ajusta según tus columnas)
+                    divResultado.innerHTML = `
+                        <h3>Datos Encontrados:</h3>
+                        <p><strong>Rut:</strong> ${datos.rut}</p>
+                        <p><strong>Nombre:</strong> ${datos.nombre}</p>
+                        <p><strong>Locker</strong> ${datos.locker}</p>
+                        <p><strong>Bolsa</strong> ${datos.bolsa}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                alert('No se pudo conectar con el servidor');
+            }
+        }
+    </script>
+</body>
+</html>
