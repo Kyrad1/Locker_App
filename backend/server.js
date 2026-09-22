@@ -7,13 +7,13 @@ const app = express();
 app.use(cors()); // Permite que el frontend se comunique con el backend
 app.use(express.json());
 
-// Configuración de la conexión a la base de datos
+// 💻 NUEVA CONFIGURACIÓN PARA LA NUBE
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'Locker_App',
-  password: 'Acciona2026',
-  port: 5432,
+  // Cuando corra en Render, leerá la variable de entorno. Localmente usará tu URL entre comillas.
+  connectionString: process.env.DATABASE_URL || 'postgresql://locker_app_web_user:bEjWRybK0BAJJ9ClZBNa1RUoe7bbOYr4@dpg-dapb71n40ujc739316ug-a.virginia-postgres.render.com/locker_app_web',
+  ssl: {
+    rejectUnauthorized: false // Requerido por Render para conexiones cifradas seguras
+  }
 });
 // Prueba rápida de conexión al iniciar el servidor
 pool.query('SELECT NOW()', (err, res) => {
