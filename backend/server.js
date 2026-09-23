@@ -43,4 +43,41 @@ app.get('/api/usuarios/:rut', async (req, res) => {
   }
 });
 
+// Ruta para AGREGAR un nuevo usuario
+app.post('/api/usuarios', async (req, res) => {
+  // Recibimos los datos desde el formulario del frontend
+  const { rut, nombre, locker, bolsa } = req.body;
+
+  // Validación básica por si falta algún dato obligatorio
+  if (!rut || !nombre || !locker) {
+    return res.status(400).json({ mensaje: 'RUT, Nombre y Locker son obligatorios' });
+  }
+
+  try {
+    // Insertamos los datos de manera segura usando parámetros preparados
+    const consulta = `
+      INSERT INTO usuarios (rut, nombre, locker, bolsa) 
+      VALUES ($1, $2, $3, $4) 
+      RETURNING *;
+    `;
+    const valores = [rut.trim(), nombre.trim(), locker.trim(), bolsa ? bolsa.trim() : null];
+    
+    const resultado = await pool.query(consulta, valores);
+
+    // Si todo sale bien, respondemos con el usuario creado
+    res.status(201).json({ 
+      mensaje: 'Usuario agregado con éxito', 
+      usuario: resultado.rows[0] 
+    });
+
+  } catch (error) {
+    console.error(error);
+    // Si el RUT ya existe, Postgres lanzará un error de llave duplicada (código 23505)
+    if (error.code === '23505') {
+      return res.status(400).json({ mensaje: 'Este RUT ya tiene un casillero asignado' });
+    }
+    res.status(500).json({ mensaje: 'Error en el servidor al guardar el usuario' });
+  }
+});
+
 app.listen(3000, () => console.log('Servidor corriendo en el puerto 3000'));
