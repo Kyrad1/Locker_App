@@ -26,7 +26,7 @@
 
             try {
                 // Llamada a la API del backend
-                const respuesta = await fetch(`http://localhost:3000/api/usuarios/${rut}`);
+                const respuesta = await fetch(`https://locker-app.onrender.com/api/usuarios/${rut}`);
                 const datos = await respuesta.json();
 
                 divResultado.style.display = 'block';

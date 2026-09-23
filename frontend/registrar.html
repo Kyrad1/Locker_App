@@ -1,0 +1,92 @@
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asignar Nuevo Locker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; max-width: 400px; }
+        .campo { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; font-size: 16px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .mensaje { margin-top: 15px; padding: 10px; display: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h2>Registrar Asignación</h2>
+    
+    <form id="formularioRegistro">
+        <div class="campo">
+            <label>RUT:</label>
+            <input type="text" id="rut" placeholder="12345678-K" required>
+        </div>
+        <div class="campo">
+            <label>Nombre Completo:</label>
+            <input type="text" id="nombre" placeholder="Juan Pérez" required>
+        </div>
+        <div class="campo">
+            <label>N° Locker / Casillero:</label>
+            <input type="text" id="locker" placeholder="999" required>
+        </div>
+        <div class="campo">
+            <label>N° Bolsa (Opcional):</label>
+            <input type="text" id="bolsa" placeholder="150">
+        </div>
+        <button type="submit">Guardar en Base de Datos</button>
+    </form>
+
+    <div id="mensajeAlerta" class="mensaje"></div>
+
+    <script>
+        document.getElementById('formularioRegistro').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita que la página se recargue
+
+            const divMensaje = document.getElementById('mensajeAlerta');
+            
+            // Capturamos los valores del formulario
+            const datosUsuario = {
+                rut: document.getElementById('rut').value,
+                nombre: document.getElementById('nombre').value,
+                locker: document.getElementById('locker').value,
+                bolsa: document.getElementById('bolsa').value
+            };
+
+            try {
+                // Enviamos los datos al Backend en Render mediante POST
+                const respuesta = await fetch('https://locker-app.onrender.com/api/usuarios', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosUsuario) // Convertimos el objeto a texto JSON
+                });
+
+                const resultado = await respuesta.json();
+                divMensaje.style.display = 'block';
+
+                if (respuesta.ok) {
+                    // Éxito
+                    divMensaje.style.backgroundColor = '#d4edda';
+                    divMensaje.style.color = '#155724';
+                    divMensaje.innerHTML = `<p><strong>¡Listo!</strong> ${resultado.mensaje}</p>`;
+                    document.getElementById('formularioRegistro').reset(); // Limpia el formulario
+                } else {
+                    // Error manejado por el backend (ej: RUT duplicado)
+                    divMensaje.style.backgroundColor = '#f8d7da';
+                    divMensaje.style.color = '#721c24';
+                    divMensaje.innerHTML = `<p><strong>Error:</strong> ${resultado.mensaje}</p>`;
+                }
+
+            } catch (error) {
+                console.error(error);
+                divMensaje.style.display = 'block';
+                divMensaje.style.backgroundColor = '#f8d7da';
+                divMensaje.style.color = '#721c24';
+                divMensaje.innerHTML = '<p><strong>Error:</strong> No se pudo conectar con el servidor.</p>';
+            }
+        });
+    </script>
+</body>
+</html>
