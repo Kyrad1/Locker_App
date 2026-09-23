@@ -1,5 +1,6 @@
 
 // server.js
+
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -8,6 +9,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 
 // =====================================================
 // CONEXIÓN A POSTGRESQL
@@ -23,16 +25,24 @@ const pool = new Pool({
   }
 });
 
-// Prueba de conexión
-pool.query('SELECT NOW()', (err, result) => {
+
+// =====================================================
+// PRUEBA DE CONEXIÓN
+// =====================================================
+
+pool.query('SELECT NOW()', (err) => {
+
   if (err) {
     console.error(
       '❌ Error crítico al conectar a PostgreSQL:',
       err.message
     );
   } else {
-    console.log('✅ Conexión exitosa a PostgreSQL');
+    console.log(
+      '✅ Conexión exitosa a la base de datos PostgreSQL'
+    );
   }
+
 });
 
 
@@ -47,7 +57,11 @@ app.get('/api/usuarios/:rut', async (req, res) => {
   try {
 
     const resultado = await pool.query(
-      'SELECT * FROM usuarios WHERE rut = $1',
+      `
+      SELECT rut, nombre, locker, bolsa
+      FROM usuarios
+      WHERE rut = $1
+      `,
       [rut]
     );
 
@@ -78,37 +92,61 @@ app.get('/api/usuarios/:rut', async (req, res) => {
 // OBTENER LOCKERS DISPONIBLES
 // =====================================================
 //
-// IMPORTANTE:
-// Esta ruta asume que tienes una tabla llamada "lockers"
-// con una columna "numero".
+// Lockers:
 //
-// Ejemplo:
+// 1-1
+// 1-2
+// ...
+// 1-15
+// 2-1
+// ...
+// 137-15
 //
-// lockers
-// ├── numero
-// └── activo
+// Total: 137 x 15 = 2055
 //
-// Si NO tienes esa tabla, más abajo te explico cómo hacerlo
-// usando solamente la tabla usuarios.
+// Si el locker ya aparece en usuarios.locker,
+// se considera ocupado.
 //
+// =====================================================
 
 app.get('/api/lockers/disponibles', async (req, res) => {
 
   try {
 
     const resultado = await pool.query(`
-      SELECT numero
-      FROM lockers
-      WHERE activo = true
-        AND numero NOT IN (
-          SELECT locker
-          FROM usuarios
-          WHERE locker IS NOT NULL
-        )
-      ORDER BY numero
+      SELECT locker
+      FROM usuarios
+      WHERE locker IS NOT NULL
     `);
 
-    res.json(resultado.rows);
+    const ocupados = new Set(
+      resultado.rows
+        .map(row => row.locker)
+        .filter(Boolean)
+    );
+
+
+    const disponibles = [];
+
+
+    for (let flota = 1; flota <= 137; flota++) {
+
+      for (let numero = 1; numero <= 15; numero++) {
+
+        const locker = `${flota}-${numero}`;
+
+        if (!ocupados.has(locker)) {
+
+          disponibles.push(locker);
+
+        }
+
+      }
+
+    }
+
+
+    res.json(disponibles);
 
   } catch (error) {
 
@@ -127,30 +165,58 @@ app.get('/api/lockers/disponibles', async (req, res) => {
 // OBTENER BOLSAS DISPONIBLES
 // =====================================================
 //
-// Esta ruta asume una tabla:
+// verde-1 ... verde-1000
+// amarillo-1 ... amarillo-1000
+// rojo-1 ... rojo-1000
 //
-// bolsas
-// ├── numero
-// └── activo
-//
+// =====================================================
 
 app.get('/api/bolsas/disponibles', async (req, res) => {
 
   try {
 
     const resultado = await pool.query(`
-      SELECT numero
-      FROM bolsas
-      WHERE activo = true
-        AND numero NOT IN (
-          SELECT bolsa
-          FROM usuarios
-          WHERE bolsa IS NOT NULL
-        )
-      ORDER BY numero
+      SELECT bolsa
+      FROM usuarios
+      WHERE bolsa IS NOT NULL
     `);
 
-    res.json(resultado.rows);
+
+    const ocupadas = new Set(
+      resultado.rows
+        .map(row => row.bolsa)
+        .filter(Boolean)
+    );
+
+
+    const colores = [
+      'verde',
+      'amarillo',
+      'rojo'
+    ];
+
+
+    const disponibles = [];
+
+
+    for (const color of colores) {
+
+      for (let numero = 1; numero <= 1000; numero++) {
+
+        const bolsa = `${color}-${numero}`;
+
+        if (!ocupadas.has(bolsa)) {
+
+          disponibles.push(bolsa);
+
+        }
+
+      }
+
+    }
+
+
+    res.json(disponibles);
 
   } catch (error) {
 
@@ -166,7 +232,7 @@ app.get('/api/bolsas/disponibles', async (req, res) => {
 
 
 // =====================================================
-// ASIGNAR LOCKER Y/O BOLSA A UN RUT
+// ASIGNAR LOCKER Y/O BOLSA
 // =====================================================
 
 app.put('/api/usuarios/:rut/asignar', async (req, res) => {
@@ -177,6 +243,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
     locker,
     bolsa
   } = req.body;
+
 
   // ---------------------------------------------------
   // Validar que venga al menos uno
@@ -190,25 +257,29 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
   }
 
+
   const client = await pool.connect();
 
-  try {
 
-    // -------------------------------------------------
-    // Iniciar transacción
-    // -------------------------------------------------
+  try {
 
     await client.query('BEGIN');
 
 
     // -------------------------------------------------
-    // Verificar que el RUT exista
+    // Buscar y bloquear el usuario
     // -------------------------------------------------
 
     const usuario = await client.query(
-      'SELECT * FROM usuarios WHERE rut = $1 FOR UPDATE',
+      `
+      SELECT *
+      FROM usuarios
+      WHERE rut = $1
+      FOR UPDATE
+      `,
       [rut]
     );
+
 
     if (usuario.rows.length === 0) {
 
@@ -222,11 +293,26 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
 
     // -------------------------------------------------
-    // Verificar LOCKER
+    // VALIDAR LOCKER
     // -------------------------------------------------
 
     if (locker) {
 
+      // Validar formato
+      const formatoLocker = /^([1-9][0-9]?|1[0-2][0-9]|13[0-7])-(?:[1-9]|1[0-5])$/;
+
+      if (!formatoLocker.test(locker)) {
+
+        await client.query('ROLLBACK');
+
+        return res.status(400).json({
+          mensaje: 'Formato de locker inválido'
+        });
+
+      }
+
+
+      // Comprobar que no esté asignado
       const lockerOcupado = await client.query(
         `
         SELECT rut
@@ -236,6 +322,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
         `,
         [locker, rut]
       );
+
 
       if (lockerOcupado.rows.length > 0) {
 
@@ -251,11 +338,27 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
 
     // -------------------------------------------------
-    // Verificar BOLSA
+    // VALIDAR BOLSA
     // -------------------------------------------------
 
     if (bolsa) {
 
+      const formatoBolsa =
+        /^(verde|amarillo|rojo)-(?:[1-9][0-9]{0,2}|1000)$/;
+
+
+      if (!formatoBolsa.test(bolsa)) {
+
+        await client.query('ROLLBACK');
+
+        return res.status(400).json({
+          mensaje: 'Formato de bolsa inválido'
+        });
+
+      }
+
+
+      // Comprobar que no esté asignada
       const bolsaOcupada = await client.query(
         `
         SELECT rut
@@ -265,6 +368,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
         `,
         [bolsa, rut]
       );
+
 
       if (bolsaOcupada.rows.length > 0) {
 
@@ -280,30 +384,31 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
 
     // -------------------------------------------------
-    // Construir actualización
+    // CONSTRUIR UPDATE
     // -------------------------------------------------
 
     const campos = [];
     const valores = [];
-    let contador = 1;
+
+    let posicion = 1;
 
 
     if (locker) {
 
-      campos.push(`locker = $${contador}`);
+      campos.push(`locker = $${posicion}`);
       valores.push(locker);
 
-      contador++;
+      posicion++;
 
     }
 
 
     if (bolsa) {
 
-      campos.push(`bolsa = $${contador}`);
+      campos.push(`bolsa = $${posicion}`);
       valores.push(bolsa);
 
-      contador++;
+      posicion++;
 
     }
 
@@ -312,23 +417,19 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
 
     // -------------------------------------------------
-    // Actualizar usuario
+    // ACTUALIZAR
     // -------------------------------------------------
 
     const resultado = await client.query(
       `
       UPDATE usuarios
       SET ${campos.join(', ')}
-      WHERE rut = $${contador}
-      RETURNING *
+      WHERE rut = $${posicion}
+      RETURNING rut, nombre, locker, bolsa
       `,
       valores
     );
 
-
-    // -------------------------------------------------
-    // Confirmar transacción
-    // -------------------------------------------------
 
     await client.query('COMMIT');
 
@@ -346,27 +447,11 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
     console.error(error);
 
 
-    // Violación de UNIQUE
+    // Error de UNIQUE
     if (error.code === '23505') {
 
-      if (error.constraint === 'usuarios_locker_unique') {
-
-        return res.status(409).json({
-          mensaje: 'Ese locker acaba de ser asignado a otro RUT'
-        });
-
-      }
-
-      if (error.constraint === 'usuarios_bolsa_unique') {
-
-        return res.status(409).json({
-          mensaje: 'Esa bolsa acaba de ser asignada a otro RUT'
-        });
-
-      }
-
       return res.status(409).json({
-        mensaje: 'El recurso seleccionado ya está asignado'
+        mensaje: 'El locker o la bolsa seleccionada ya fue asignada a otro RUT'
       });
 
     }
@@ -375,6 +460,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
     res.status(500).json({
       mensaje: 'Error al realizar la asignación'
     });
+
 
   } finally {
 
@@ -411,12 +497,25 @@ app.post('/api/usuarios', async (req, res) => {
   try {
 
     // -------------------------------------------------
-    // Verificar locker si viene informado
+    // Validar locker
     // -------------------------------------------------
 
     if (locker) {
 
-      const lockerExiste = await pool.query(
+      const formatoLocker =
+        /^([1-9][0-9]?|1[0-2][0-9]|13[0-7])-(?:[1-9]|1[0-5])$/;
+
+
+      if (!formatoLocker.test(locker.trim())) {
+
+        return res.status(400).json({
+          mensaje: 'Formato de locker inválido'
+        });
+
+      }
+
+
+      const ocupado = await pool.query(
         `
         SELECT rut
         FROM usuarios
@@ -425,7 +524,8 @@ app.post('/api/usuarios', async (req, res) => {
         [locker.trim()]
       );
 
-      if (lockerExiste.rows.length > 0) {
+
+      if (ocupado.rows.length > 0) {
 
         return res.status(409).json({
           mensaje: 'Ese locker ya está asignado a otro RUT'
@@ -437,12 +537,25 @@ app.post('/api/usuarios', async (req, res) => {
 
 
     // -------------------------------------------------
-    // Verificar bolsa si viene informada
+    // Validar bolsa
     // -------------------------------------------------
 
     if (bolsa) {
 
-      const bolsaExiste = await pool.query(
+      const formatoBolsa =
+        /^(verde|amarillo|rojo)-(?:[1-9][0-9]{0,2}|1000)$/;
+
+
+      if (!formatoBolsa.test(bolsa.trim())) {
+
+        return res.status(400).json({
+          mensaje: 'Formato de bolsa inválido'
+        });
+
+      }
+
+
+      const ocupada = await pool.query(
         `
         SELECT rut
         FROM usuarios
@@ -451,7 +564,8 @@ app.post('/api/usuarios', async (req, res) => {
         [bolsa.trim()]
       );
 
-      if (bolsaExiste.rows.length > 0) {
+
+      if (ocupada.rows.length > 0) {
 
         return res.status(409).json({
           mensaje: 'Esa bolsa ya está asignada a otro RUT'
@@ -463,28 +577,22 @@ app.post('/api/usuarios', async (req, res) => {
 
 
     // -------------------------------------------------
-    // Insertar
+    // INSERT
     // -------------------------------------------------
 
-    const consulta = `
+    const resultado = await pool.query(
+      `
       INSERT INTO usuarios
       (rut, nombre, locker, bolsa)
       VALUES ($1, $2, $3, $4)
-      RETURNING *;
-    `;
-
-
-    const valores = [
-      rut.trim(),
-      nombre.trim(),
-      locker ? locker.trim() : null,
-      bolsa ? bolsa.trim() : null
-    ];
-
-
-    const resultado = await pool.query(
-      consulta,
-      valores
+      RETURNING rut, nombre, locker, bolsa
+      `,
+      [
+        rut.trim(),
+        nombre.trim(),
+        locker ? locker.trim() : null,
+        bolsa ? bolsa.trim() : null
+      ]
     );
 
 
@@ -528,4 +636,4 @@ app.listen(3000, () => {
   );
 
 });
-```
+
