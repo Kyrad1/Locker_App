@@ -1,92 +1,235 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Asignar Nuevo Locker</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; max-width: 400px; }
-        .campo { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; font-size: 16px; cursor: pointer; }
-        button:hover { background-color: #218838; }
-        .mensaje { margin-top: 15px; padding: 10px; display: none; border-radius: 4px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asignar Nuevo Locker - ACCIONA</title>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+    }
+
+    body{
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background:#f5f5f5;
+        min-height:100vh;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        padding:20px;
+    }
+
+    .contenedor{
+        background:#fff;
+        width:100%;
+        max-width:550px;
+        padding:35px;
+        border-radius:16px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.15);
+        border-top:6px solid #E30613;
+    }
+
+    .logo{
+        text-align:center;
+        margin-bottom:25px;
+    }
+
+    .logo h1{
+        color:#E30613;
+        font-size:34px;
+        letter-spacing:1px;
+    }
+
+    .logo p{
+        color:#666;
+        margin-top:5px;
+    }
+
+    h2{
+        text-align:center;
+        color:#333;
+        margin-bottom:25px;
+    }
+
+    .campo{
+        margin-bottom:18px;
+    }
+
+    label{
+        display:block;
+        margin-bottom:6px;
+        font-weight:600;
+        color:#444;
+    }
+
+    input{
+        width:100%;
+        padding:12px;
+        border:2px solid #ddd;
+        border-radius:8px;
+        font-size:15px;
+        transition:all .3s ease;
+    }
+
+    input:focus{
+        outline:none;
+        border-color:#E30613;
+        box-shadow:0 0 0 4px rgba(227,6,19,.12);
+    }
+
+    button{
+        width:100%;
+        padding:14px;
+        background:#E30613;
+        color:white;
+        border:none;
+        border-radius:8px;
+        font-size:16px;
+        font-weight:600;
+        cursor:pointer;
+        transition:.3s;
+    }
+
+    button:hover{
+        background:#C40510;
+        transform:translateY(-2px);
+    }
+
+    .mensaje{
+        display:none;
+        margin-top:20px;
+        padding:15px;
+        border-radius:8px;
+        font-weight:500;
+    }
+
+    .mensaje-ok{
+        background:#e9f7ef;
+        color:#155724;
+        border-left:5px solid #28a745;
+    }
+
+    .mensaje-error{
+        background:#fdeaea;
+        color:#721c24;
+        border-left:5px solid #E30613;
+    }
+</style>
 </head>
+
 <body>
 
+<div class="contenedor">
+
+    <div class="logo">
+        <h1>ACCIONA</h1>
+        <p>Gestión de Lockers</p>
+    </div>
+
     <h2>Registrar Asignación</h2>
-    
+
     <form id="formularioRegistro">
+
         <div class="campo">
-            <label>RUT:</label>
+            <label for="rut">RUT</label>
             <input type="text" id="rut" placeholder="12345678-K" required>
         </div>
+
         <div class="campo">
-            <label>Nombre Completo:</label>
+            <label for="nombre">Nombre Completo</label>
             <input type="text" id="nombre" placeholder="Juan Pérez" required>
         </div>
+
         <div class="campo">
-            <label>N° Locker / Casillero:</label>
+            <label for="locker">N° Locker / Casillero</label>
             <input type="text" id="locker" placeholder="999" required>
         </div>
+
         <div class="campo">
-            <label>N° Bolsa (Opcional):</label>
+            <label for="bolsa">N° Bolsa (Opcional)</label>
             <input type="text" id="bolsa" placeholder="150">
         </div>
-        <button type="submit">Guardar en Base de Datos</button>
+
+        <button type="submit">
+            Guardar Asignación
+        </button>
+
     </form>
 
     <div id="mensajeAlerta" class="mensaje"></div>
 
-    <script>
-        document.getElementById('formularioRegistro').addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evita que la página se recargue
+</div>
 
-            const divMensaje = document.getElementById('mensajeAlerta');
-            
-            // Capturamos los valores del formulario
-            const datosUsuario = {
-                rut: document.getElementById('rut').value,
-                nombre: document.getElementById('nombre').value,
-                locker: document.getElementById('locker').value,
-                bolsa: document.getElementById('bolsa').value
-            };
+<script>
 
-            try {
-                // Enviamos los datos al Backend en Render mediante POST
-                const respuesta = await fetch('https://locker-app.onrender.com/api/usuarios', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(datosUsuario) // Convertimos el objeto a texto JSON
-                });
+document.getElementById('formularioRegistro').addEventListener('submit', async (e) => {
 
-                const resultado = await respuesta.json();
-                divMensaje.style.display = 'block';
+    e.preventDefault();
 
-                if (respuesta.ok) {
-                    // Éxito
-                    divMensaje.style.backgroundColor = '#d4edda';
-                    divMensaje.style.color = '#155724';
-                    divMensaje.innerHTML = `<p><strong>¡Listo!</strong> ${resultado.mensaje}</p>`;
-                    document.getElementById('formularioRegistro').reset(); // Limpia el formulario
-                } else {
-                    // Error manejado por el backend (ej: RUT duplicado)
-                    divMensaje.style.backgroundColor = '#f8d7da';
-                    divMensaje.style.color = '#721c24';
-                    divMensaje.innerHTML = `<p><strong>Error:</strong> ${resultado.mensaje}</p>`;
-                }
+    const divMensaje = document.getElementById('mensajeAlerta');
 
-            } catch (error) {
-                console.error(error);
-                divMensaje.style.display = 'block';
-                divMensaje.style.backgroundColor = '#f8d7da';
-                divMensaje.style.color = '#721c24';
-                divMensaje.innerHTML = '<p><strong>Error:</strong> No se pudo conectar con el servidor.</p>';
+    const datosUsuario = {
+        rut: document.getElementById('rut').value,
+        nombre: document.getElementById('nombre').value,
+        locker: document.getElementById('locker').value,
+        bolsa: document.getElementById('bolsa').value
+    };
+
+    try {
+
+        const respuesta = await fetch(
+            'https://locker-app.onrender.com/api/usuarios',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datosUsuario)
             }
-        });
-    </script>
+        );
+
+        const resultado = await respuesta.json();
+
+        divMensaje.style.display = 'block';
+
+        if (respuesta.ok) {
+
+            divMensaje.className = 'mensaje mensaje-ok';
+            divMensaje.innerHTML = `
+                ✅ <strong>Éxito:</strong>
+                ${resultado.mensaje}
+            `;
+
+            document.getElementById('formularioRegistro').reset();
+
+        } else {
+
+            divMensaje.className = 'mensaje mensaje-error';
+            divMensaje.innerHTML = `
+                ❌ <strong>Error:</strong>
+                ${resultado.mensaje}
+            `;
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        divMensaje.style.display = 'block';
+        divMensaje.className = 'mensaje mensaje-error';
+
+        divMensaje.innerHTML = `
+            ❌ <strong>Error:</strong>
+            No se pudo conectar con el servidor.
+        `;
+    }
+
+});
+
+</script>
+
 </body>
 </html>
