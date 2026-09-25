@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar Usuario - ACCIONA</title>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+    }
+
+    body{
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background:#f5f5f5;
+        min-height:100vh;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        padding:20px;
+    }
+
+    .contenedor{
+        background:#fff;
+        width:100%;
+        max-width:550px;
+        padding:35px;
+        border-radius:16px;
+        box-shadow:0 10px 30px rgba(0,0,0,.15);
+        border-top:6px solid #E30613;
+    }
+
+    .logo{
+        text-align:center;
+        margin-bottom:22px;
+    }
+
+    .logo h1{
+        color:#E30613;
+        font-size:34px;
+        letter-spacing:1px;
+    }
+
+    .logo p{
+        color:#666;
+        margin-top:5px;
+    }
+
+    h2{
+        text-align:center;
+        color:#333;
+        margin-bottom:8px;
+    }
+
+    .subtitulo{
+        text-align:center;
+        color:#777;
+        font-size:14px;
+        margin-bottom:25px;
+    }
+
+    .campo{
+        margin-bottom:18px;
+    }
+
+    label{
+        display:block;
+        margin-bottom:6px;
+        font-weight:600;
+        color:#444;
+    }
+
+    .ayuda{
+        display:block;
+        margin-top:5px;
+        color:#777;
+        font-size:12px;
+    }
+
+    input{
+        width:100%;
+        padding:13px 12px;
+        border:2px solid #ddd;
+        border-radius:8px;
+        font-size:15px;
+        transition:all .2s ease;
+    }
+
+    input:focus{
+        outline:none;
+        border-color:#E30613;
+        box-shadow:0 0 0 4px rgba(227,6,19,.12);
+    }
+
+    input.input-error{
+        border-color:#E30613;
+        background:#fff8f8;
+    }
+
+    input.input-ok{
+        border-color:#28a745;
+    }
+
+    .boton{
+        width:100%;
+        padding:14px;
+        background:#E30613;
+        color:white;
+        border:none;
+        border-radius:8px;
+        font-size:16px;
+        font-weight:600;
+        cursor:pointer;
+        transition:.2s;
+        margin-top:5px;
+    }
+
+    .boton:hover:not(:disabled){
+        background:#C40510;
+        transform:translateY(-1px);
+    }
+
+    .boton:disabled{
+        opacity:.65;
+        cursor:not-allowed;
+        transform:none;
+    }
+
+    .mensaje{
+        display:none;
+        margin-top:20px;
+        padding:15px;
+        border-radius:8px;
+        font-weight:500;
+        line-height:1.45;
+    }
+
+    .mensaje-ok{
+        background:#e9f7ef;
+        color:#155724;
+        border-left:5px solid #28a745;
+    }
+
+    .mensaje-error{
+        background:#fdeaea;
+        color:#721c24;
+        border-left:5px solid #E30613;
+    }
+
+    .mensaje-info{
+        background:#eef5ff;
+        color:#174a7e;
+        border-left:5px solid #2f80ed;
+    }
+
+    .nota{
+        margin-top:18px;
+        padding:12px;
+        background:#f8f8f8;
+        border-radius:8px;
+        color:#666;
+        font-size:12px;
+        line-height:1.5;
+    }
+
+    @media(max-width:600px){
+        body{
+            align-items:flex-start;
+            padding:12px;
+        }
+
+        .contenedor{
+            padding:25px 20px;
+            margin-top:10px;
+        }
+
+        .logo h1{
+            font-size:30px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <div class="logo">
+        <h1>ACCIONA</h1>
+        <p>Gestión de Lockers</p>
+    </div>
+
+    <h2>Registrar Usuario</h2>
+    <p class="subtitulo">Agrega a la base de datos a una persona que no existe.</p>
+
+    <form id="formularioRegistro" novalidate>
+
+        <div class="campo">
+            <label for="rut">RUT *</label>
+            <input
+                type="text"
+                id="rut"
+                placeholder="12345678K"
+                autocomplete="off"
+                maxlength="12"
+                required
+            >
+            <span class="ayuda">Sin puntos ni guion. Debe incluir el dígito verificador.</span>
+        </div>
+
+        <div class="campo">
+            <label for="nombre">Nombre Completo *</label>
+            <input
+                type="text"
+                id="nombre"
+                placeholder="Juan Pérez"
+                autocomplete="name"
+                maxlength="100"
+                required
+            >
+        </div>
+
+        <div class="campo">
+            <label for="locker">N° Locker / Casillero *</label>
+            <input
+                type="text"
+                id="locker"
+                placeholder="999"
+                inputmode="numeric"
+                autocomplete="off"
+                required
+            >
+            <span class="ayuda">Número del locker que se le asignará.</span>
+        </div>
+
+        <div class="campo">
+            <label for="bolsa">N° Bolsa</label>
+            <input
+                type="text"
+                id="bolsa"
+                placeholder="150"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="10"
+            >
+            <span class="ayuda">Opcional. Solo números, de 1 a 10 dígitos. Se permiten ceros iniciales.</span>
+        </div>
+
+        <div class="campo">
+            <label for="candado">N° Candado</label>
+            <input
+                type="text"
+                id="candado"
+                placeholder="00125"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="10"
+            >
+            <span class="ayuda">Opcional. Solo números, de 1 a 10 dígitos. Se permiten ceros iniciales.</span>
+        </div>
+
+        <button type="submit" id="btnGuardar" class="boton">
+            Guardar Usuario
+        </button>
+
+    </form>
+
+    <div id="mensajeAlerta" class="mensaje"></div>
+
+    <div class="nota">
+        <strong>Importante:</strong> el locker es obligatorio. La bolsa y el candado pueden
+        quedar vacíos y asignarse posteriormente desde la ventana de administración.
+    </div>
+
+</div>
+
+<script>
+const API_URL = 'https://locker-app.onrender.com/api';
+
+const formulario = document.getElementById('formularioRegistro');
+const rutInput = document.getElementById('rut');
+const nombreInput = document.getElementById('nombre');
+const lockerInput = document.getElementById('locker');
+const bolsaInput = document.getElementById('bolsa');
+const candadoInput = document.getElementById('candado');
+const btnGuardar = document.getElementById('btnGuardar');
+const divMensaje = document.getElementById('mensajeAlerta');
+
+function normalizarRut(valor){
+    return valor
+        .trim()
+        .replace(/[.\-\s]/g, '')
+        .toUpperCase();
+}
+
+function validarRut(rut){
+    if(!/^\d{7,8}[0-9K]$/.test(rut)){
+        return false;
+    }
+
+    const cuerpo = rut.slice(0, -1);
+    const dvIngresado = rut.slice(-1);
+
+    let suma = 0;
+    let multiplicador = 2;
+
+    for(let i = cuerpo.length - 1; i >= 0; i--){
+        suma += Number(cuerpo[i]) * multiplicador;
+        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+    }
+
+    const resto = 11 - (suma % 11);
+    let dvCalculado;
+
+    if(resto === 11){
+        dvCalculado = '0';
+    }else if(resto === 10){
+        dvCalculado = 'K';
+    }else{
+        dvCalculado = String(resto);
+    }
+
+    return dvCalculado === dvIngresado;
+}
+
+function validarNumerico(valor){
+    return /^\d{1,10}$/.test(valor);
+}
+
+function limpiarEstadoInputs(){
+    [rutInput, nombreInput, lockerInput, bolsaInput, candadoInput]
+        .forEach(input => input.classList.remove('input-error', 'input-ok'));
+}
+
+function mostrarMensaje(tipo, contenido){
+    divMensaje.style.display = 'block';
+    divMensaje.className = `mensaje mensaje-${tipo}`;
+    divMensaje.innerHTML = contenido;
+}
+
+function ocultarMensaje(){
+    divMensaje.style.display = 'none';
+    divMensaje.innerHTML = '';
+}
+
+function escaparHtml(texto){
+    const div = document.createElement('div');
+    div.textContent = texto ?? '';
+    return div.innerHTML;
+}
+
+function obtenerMensajeServidor(resultado, respuesta){
+    if(resultado && resultado.mensaje){
+        return resultado.mensaje;
+    }
+
+    if(respuesta.status === 409){
+        return 'El usuario ya existe o uno de los números ingresados ya está asignado.';
+    }
+
+    if(respuesta.status === 400){
+        return 'Los datos ingresados no son válidos. Revisa los campos e inténtalo nuevamente.';
+    }
+
+    return 'No se pudo registrar el usuario.';
+}
+
+// RUT: limpia automáticamente y deja el formato correcto para la aplicación.
+rutInput.addEventListener('input', () => {
+    const posicion = rutInput.selectionStart;
+    const anterior = rutInput.value;
+
+    rutInput.value = normalizarRut(rutInput.value);
+
+    if(anterior !== rutInput.value && posicion !== null){
+        rutInput.setSelectionRange(
+            Math.min(posicion, rutInput.value.length),
+            Math.min(posicion, rutInput.value.length)
+        );
+    }
+});
+
+// Bolsa y candado: solo números.
+[lockerInput, bolsaInput, candadoInput].forEach(input => {
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '').slice(0, 10);
+    });
+});
+
+rutInput.addEventListener('blur', () => {
+    const rut = normalizarRut(rutInput.value);
+
+    if(!rut){
+        rutInput.classList.remove('input-error', 'input-ok');
+        return;
+    }
+
+    if(validarRut(rut)){
+        rutInput.classList.remove('input-error');
+        rutInput.classList.add('input-ok');
+    }else{
+        rutInput.classList.remove('input-ok');
+        rutInput.classList.add('input-error');
+    }
+});
+
+formulario.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    limpiarEstadoInputs();
+    ocultarMensaje();
+
+    const rut = normalizarRut(rutInput.value);
+    const nombre = nombreInput.value.trim();
+    const locker = lockerInput.value.trim();
+    const bolsa = bolsaInput.value.trim();
+    const candado = candadoInput.value.trim();
+
+    // Validación RUT
+    if(!rut){
+        rutInput.classList.add('input-error');
+        rutInput.focus();
+        mostrarMensaje('error', '❌ <strong>Falta el RUT.</strong> Ingresa el RUT sin puntos ni guion, incluyendo el dígito verificador.');
+        return;
+    }
+
+    if(!validarRut(rut)){
+        rutInput.classList.add('input-error');
+        rutInput.focus();
+        mostrarMensaje('error', '❌ <strong>RUT inválido.</strong> Revisa el número y su dígito verificador.');
+        return;
+    }
+
+    // Validación nombre
+    if(!nombre){
+        nombreInput.classList.add('input-error');
+        nombreInput.focus();
+        mostrarMensaje('error', '❌ <strong>Falta el nombre.</strong> Ingresa el nombre completo.');
+        return;
+    }
+
+    // Validación locker
+    if(!locker){
+        lockerInput.classList.add('input-error');
+        lockerInput.focus();
+        mostrarMensaje('error', '❌ <strong>Falta el locker.</strong> Debes indicar el número del locker asignado.');
+        return;
+    }
+
+    // Bolsa opcional, pero si se ingresa debe ser válida
+    if(bolsa && !validarNumerico(bolsa)){
+        bolsaInput.classList.add('input-error');
+        bolsaInput.focus();
+        mostrarMensaje('error', '❌ <strong>Número de bolsa inválido.</strong> Debe contener entre 1 y 10 dígitos.');
+        return;
+    }
+
+    // Candado opcional, pero si se ingresa debe ser válido
+    if(candado && !validarNumerico(candado)){
+        candadoInput.classList.add('input-error');
+        candadoInput.focus();
+        mostrarMensaje('error', '❌ <strong>Número de candado inválido.</strong> Debe contener entre 1 y 10 dígitos.');
+        return;
+    }
+
+    const datosUsuario = {
+        rut,
+        nombre,
+        locker,
+        bolsa: bolsa || null,
+        candado: candado || null
+    };
+
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Guardando...';
+
+    mostrarMensaje('info', '⏳ <strong>Guardando usuario...</strong> No cierres esta ventana.');
+
+    try{
+        const respuesta = await fetch(`${API_URL}/usuarios`, {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify(datosUsuario)
+        });
+
+        let resultado = {};
+
+        try{
+            resultado = await respuesta.json();
+        }catch{
+            resultado = {};
+        }
+
+        if(respuesta.ok){
+            mostrarMensaje(
+                'ok',
+                `✅ <strong>Usuario registrado correctamente.</strong><br>
+                ${escaparHtml(resultado.mensaje || 'El usuario fue agregado a la base de datos.')}<br><br>
+                <strong>RUT:</strong> ${escaparHtml(rut)}<br>
+                <strong>Nombre:</strong> ${escaparHtml(nombre)}<br>
+                <strong>Locker:</strong> ${escaparHtml(locker)}
+                ${bolsa ? `<br><strong>Bolsa:</strong> ${escaparHtml(bolsa)}` : ''}
+                ${candado ? `<br><strong>Candado:</strong> ${escaparHtml(candado)}` : ''}`
+            );
+
+            formulario.reset();
+            limpiarEstadoInputs();
+            rutInput.focus();
+
+        }else{
+            const mensajeServidor = obtenerMensajeServidor(resultado, respuesta);
+
+            mostrarMensaje(
+                'error',
+                `❌ <strong>No se pudo registrar.</strong><br>${escaparHtml(mensajeServidor)}`
+            );
+        }
+
+    }catch(error){
+        console.error(error);
+
+        mostrarMensaje(
+            'error',
+            '❌ <strong>No se pudo conectar con el servidor.</strong><br>Revisa tu conexión a internet o intenta nuevamente en unos segundos.'
+        );
+    }finally{
+        btnGuardar.disabled = false;
+        btnGuardar.textContent = 'Guardar Usuario';
+    }
+});
+
+// Enter funciona normalmente dentro del formulario.
+rutInput.focus();
+</script>
+
+</body>
+</html>

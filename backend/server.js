@@ -110,13 +110,17 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
   const { rut } = req.params;
 
-  let { bolsa, candado } = req.body;
+  let { locker, bolsa, candado } = req.body;
 
 
   // ---------------------------------------------------
   // Limpiar valores recibidos
   // ---------------------------------------------------
 
+  locker =
+  locker !== undefined && locker !== null
+    ? String(locker).trim()
+    : null;
   bolsa =
     bolsa !== undefined && bolsa !== null
       ? String(bolsa).trim()
@@ -131,15 +135,45 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
   // ---------------------------------------------------
   // Validar que venga al menos uno
   // ---------------------------------------------------
-
-  if (!bolsa && !candado) {
-
+  if (!locker && !bolsa && !candado) {
     return res.status(400).json({
-      mensaje: 'Debes indicar una bolsa o un candado'
+        mensaje: 'Debes indicar un locker, una bolsa o un candado'
+    });
+}
+// LIBERAR LOCKER
+app.put('/api/usuarios/:rut/liberar-locker', async (req, res) => {
+  const { rut } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+        UPDATE usuarios
+        SET locker = NULL
+        WHERE rut = $1
+        RETURNING rut, nombre, locker, bolsa, candado
+      `,
+      [rut]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
+    res.json({
+      mensaje: 'Locker liberado correctamente',
+      usuario: resultado.rows[0]
     });
 
-  }
+  } catch (error) {
+    console.error('Error al liberar locker:', error);
 
+    res.status(500).json({
+      mensaje: 'Error interno del servidor'
+    });
+  }
+});
 
   // ---------------------------------------------------
   // Validar formato de bolsa
@@ -211,7 +245,32 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
       });
 
     }
+// -------------------------------------------------
+// VALIDAR LOCKER
+// -------------------------------------------------
 
+    if (locker) {
+
+        const lockerOcupado = await client.query(
+            `
+                SELECT rut
+                FROM usuarios
+                WHERE locker = $1
+                AND rut <> $2
+            `,
+            [locker, rut]
+        );
+
+        if (lockerOcupado.rows.length > 0) {
+
+            await client.query('ROLLBACK');
+
+            return res.status(409).json({
+                mensaje: `El locker ${locker} ya está asignado a otro RUT`
+            });
+
+        }
+    }
 
     // -------------------------------------------------
     // VALIDAR BOLSA
@@ -281,6 +340,15 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
     const valores = [];
 
     let posicion = 1;
+    
+    if (locker) {
+
+    campos.push(`locker = $${posicion}`);
+    valores.push(locker);
+
+    posicion++;
+
+    }
 
 
     if (bolsa) {
@@ -378,26 +446,26 @@ app.post('/api/usuarios', async (req, res) => {
   let {
     rut,
     nombre,
+    locker,
     bolsa,
     candado
-  } = req.body;
+} = req.body;
 
 
   // ---------------------------------------------------
   // Validar datos obligatorios
   // ---------------------------------------------------
 
-  if (!rut || !nombre) {
-
+  if (!rut || !nombre || !locker) {
     return res.status(400).json({
-      mensaje: 'RUT y Nombre son obligatorios'
+        mensaje: 'RUT, Nombre y Locker son obligatorios'
     });
-
-  }
+}
 
 
   rut = String(rut).trim();
   nombre = String(nombre).trim();
+  locker = String(locker).trim();
 
 
   // ---------------------------------------------------
@@ -528,15 +596,16 @@ app.post('/api/usuarios', async (req, res) => {
           bolsa,
           candado
         )
-        VALUES ($1, $2, NULL, $3, $4)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING rut, nombre, locker, bolsa, candado
       `,
-      [
+        [
         rut,
         nombre,
+        locker,
         bolsa || null,
         candado || null
-      ]
+        ]
     );
 
 

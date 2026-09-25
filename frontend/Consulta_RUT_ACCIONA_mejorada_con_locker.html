@@ -1,0 +1,858 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Consulta por RUT - ACCIONA</title>
+
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+}
+
+
+.container {
+    background: #ffffff;
+
+    width: 100%;
+    max-width: 600px;
+
+    padding: 35px;
+
+    border-radius: 15px;
+
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+
+    border-top: 6px solid #E30613;
+}
+
+
+.logo-area {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+
+.logo-area h1 {
+    color: #E30613;
+
+    font-size: 32px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+.logo-area p {
+    color: #666;
+
+    margin-top: 5px;
+}
+
+
+h2 {
+    text-align: center;
+
+    color: #333;
+
+    margin-bottom: 20px;
+}
+
+
+.input-group {
+    display: flex;
+
+    gap: 10px;
+}
+
+
+input {
+    flex: 1;
+
+    padding: 12px;
+
+    border: 2px solid #ddd;
+
+    border-radius: 8px;
+
+    font-size: 16px;
+
+    transition: 0.3s;
+}
+
+
+input:focus {
+    outline: none;
+
+    border-color: #E30613;
+
+    box-shadow: 0 0 0 3px rgba(227,6,19,0.15);
+}
+
+
+button {
+    background: #E30613;
+
+    color: white;
+
+    border: none;
+
+    padding: 12px 20px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    transition: 0.3s;
+}
+
+
+button:hover {
+    background: #c40510;
+
+    transform: translateY(-1px);
+}
+
+
+button:disabled {
+    background: #aaa;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+.resultado {
+    margin-top: 25px;
+
+    padding: 20px;
+
+    border-radius: 10px;
+
+    background: #fafafa;
+
+    border-left: 5px solid #E30613;
+
+    display: none;
+}
+
+
+.resultado h3 {
+    color: #E30613;
+
+    margin-bottom: 12px;
+}
+
+
+.dato {
+    padding: 12px 0;
+
+    border-bottom: 1px solid #eee;
+
+    color: #333;
+}
+
+
+.dato:last-child {
+    border-bottom: none;
+}
+
+
+.error {
+    color: #E30613;
+
+    font-weight: bold;
+}
+
+
+.success {
+    color: #198754;
+
+    font-weight: bold;
+
+    margin-top: 10px;
+}
+
+
+.sin-asignar {
+    color: #d97706;
+
+    font-weight: 600;
+}
+
+
+.asignacion {
+    margin-top: 10px;
+
+    padding: 12px;
+
+    background: #fff;
+
+    border: 1px solid #ddd;
+
+    border-radius: 8px;
+}
+
+
+.asignacion label {
+    display: block;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+
+    color: #333;
+}
+
+
+.asignacion-row {
+    display: flex;
+
+    gap: 10px;
+}
+
+
+select {
+    flex: 1;
+
+    padding: 10px;
+
+    border: 2px solid #ddd;
+
+    border-radius: 8px;
+
+    font-size: 15px;
+
+    background: white;
+
+    cursor: pointer;
+}
+
+
+select:focus {
+    outline: none;
+
+    border-color: #E30613;
+}
+
+
+.btn-asignar {
+    padding: 10px 15px;
+
+    white-space: nowrap;
+}
+
+
+.mensaje {
+    margin-top: 10px;
+
+    padding: 10px;
+
+    border-radius: 7px;
+
+    display: none;
+
+    font-size: 14px;
+}
+
+
+.mensaje.error {
+    background: #ffe5e5;
+
+    color: #b00000;
+}
+
+
+.mensaje.exito {
+    background: #e7f7ed;
+
+    color: #146c2e;
+}
+
+
+.loading {
+    color: #666;
+
+    font-style: italic;
+
+    margin-top: 8px;
+}
+
+
+.info {
+    background: #f1f1f1;
+
+    padding: 10px;
+
+    border-radius: 8px;
+
+    margin-bottom: 15px;
+
+    font-size: 14px;
+
+    color: #555;
+}
+
+
+@media (max-width: 600px) {
+
+    .container {
+        padding: 25px 20px;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group button {
+        width: 100%;
+    }
+
+    .asignacion-row {
+        flex-direction: column;
+    }
+
+    .btn-asignar {
+        width: 100%;
+    }
+
+}
+.asignacion small {
+    display: block;
+    margin-top: 6px;
+    color: #777;
+    font-size: 12px;
+}
+
+.asignacion-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.asignacion-row input:disabled {
+    background: #f3f3f3;
+}
+
+</style>
+
+
+<style>
+.instruccion { text-align:center; color:#666; margin-bottom:18px; font-size:14px; }
+.info-rut { margin-top:8px; color:#777; font-size:12px; text-align:center; }
+.estado { margin-bottom:15px; padding:11px 13px; border-radius:8px; font-weight:600; font-size:14px; }
+.estado.ok { background:#e7f7ed; color:#146c2e; }
+.estado.pendiente { background:#fff5df; color:#9a5b00; }
+.resultado-vacio { text-align:center; padding:8px 0; }
+.resultado-vacio .icono { font-size:30px; margin-bottom:8px; }
+.btn-secundario { background:#555; width:100%; margin-top:16px; }
+.btn-secundario:hover { background:#444; }
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+    <div class="logo-area">
+        <h1>ACCIONA</h1>
+        <p>Consulta de Usuarios</p>
+    </div>
+
+    <h2>Buscar por RUT</h2>
+    <p class="instruccion">Ingresa el RUT <strong>sin puntos ni guion</strong>, incluyendo el dígito verificador.</p>
+
+    <div class="input-group">
+        <input type="text" id="rutInput" placeholder="Ej: 12345678K"
+               autocomplete="off" maxlength="9" inputmode="text">
+        <button type="button" onclick="buscarPorRut()" id="btnConsultar">Consultar</button>
+    </div>
+
+    <p class="info-rut">Ejemplo válido: 12345678K</p>
+    <div id="resultado" class="resultado" aria-live="polite"></div>
+</div>
+
+
+<script>
+const API_URL = 'https://locker-app.onrender.com/api';
+
+function normalizarRut(valor) {
+    return String(valor || '')
+        .replace(/[^0-9kK]/g, '')
+        .toUpperCase()
+        .slice(0, 9);
+}
+
+function validarRut(rut) {
+    if (!/^\d{7,8}[0-9K]$/.test(rut)) return false;
+
+    const cuerpo = rut.slice(0, -1);
+    const dvIngresado = rut.slice(-1);
+    let suma = 0;
+    let multiplicador = 2;
+
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+        suma += Number(cuerpo[i]) * multiplicador;
+        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+    }
+
+    const resultado = 11 - (suma % 11);
+    const dvCalculado = resultado === 11 ? '0'
+        : resultado === 10 ? 'K'
+        : String(resultado);
+
+    return dvCalculado === dvIngresado;
+}
+
+async function buscarPorRut() {
+    const rutInput = document.getElementById('rutInput');
+    const divResultado = document.getElementById('resultado');
+    const btnConsultar = document.getElementById('btnConsultar');
+    const rut = normalizarRut(rutInput.value);
+
+    rutInput.value = rut;
+
+    if (!rut) {
+        mostrarErrorResultado('⚠️ Ingresa un RUT para realizar la consulta.');
+        rutInput.focus();
+        return;
+    }
+
+    if (!validarRut(rut)) {
+        mostrarErrorResultado('⚠️ El RUT ingresado no es válido. Revisa los números y el dígito verificador.');
+        rutInput.focus();
+        rutInput.select();
+        return;
+    }
+
+    divResultado.style.display = 'block';
+    divResultado.innerHTML = '<p class="loading">🔎 Consultando información...</p>';
+    btnConsultar.disabled = true;
+
+    try {
+        const respuesta = await fetch(`${API_URL}/usuarios/${encodeURIComponent(rut)}`);
+        let datos = {};
+        try { datos = await respuesta.json(); } catch (_) {}
+
+        if (respuesta.status === 404) {
+            mostrarResultadoNoEncontrado();
+            return;
+        }
+
+        if (!respuesta.ok) {
+            mostrarErrorResultado(datos.mensaje || 'No se pudo realizar la consulta. Inténtalo nuevamente.');
+            return;
+        }
+
+        mostrarUsuario(datos);
+    } catch (error) {
+        console.error(error);
+        mostrarErrorResultado('❌ No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente.');
+    } finally {
+        btnConsultar.disabled = false;
+    }
+}
+async function liberarLocker() {
+  if (!usuarioActual || !usuarioActual.rut) return;
+
+  const confirmar = confirm(
+    `¿Seguro que quieres liberar el locker ${usuarioActual.locker} de este usuario?`
+  );
+
+  if (!confirmar) return;
+
+  const btn = document.getElementById('btnLiberarLocker');
+
+  try {
+    btn.disabled = true;
+    btn.textContent = 'Liberando...';
+
+    const response = await fetch(
+      `${API_URL}/usuarios/${usuarioActual.rut}/liberar-locker`,
+      {
+        method: 'PUT'
+      }
+    );
+
+    const datos = await response.json();
+
+    if (!response.ok) {
+      throw new Error(datos.mensaje || 'No se pudo liberar el locker');
+    }
+
+    usuarioActual = datos.usuario;
+
+    mostrarUsuario(usuarioActual);
+
+    alert('Locker liberado correctamente');
+
+  } catch (error) {
+    alert(error.message);
+
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Liberar locker';
+  }
+}
+
+function mostrarUsuario(datos) {
+    const divResultado = document.getElementById('resultado');
+    const bolsaAsignada = Boolean(datos.bolsa);
+    const candadoAsignado = Boolean(datos.candado);
+    const todoAsignado = bolsaAsignada && candadoAsignado;
+    const btnLiberarLocker = document.getElementById('btnLiberarLocker');
+
+    btnLiberarLocker.style.display =
+        usuario.locker ? 'inline-block' : 'none';
+
+    divResultado.innerHTML = `
+        <h3>✓ Usuario encontrado</h3>
+
+        <div class="estado ${todoAsignado ? 'ok' : 'pendiente'}">
+            ${todoAsignado
+                ? '🟢 Bolsa y candado están asignados.'
+                : '🟡 Falta completar una o más asignaciones.'}
+        </div>
+
+        <div class="dato"><strong>RUT:</strong> ${escapeHtml(datos.rut)}</div>
+        <div class="dato"><strong>Nombre:</strong> ${escapeHtml(datos.nombre)}</div>
+
+        <div class="dato">
+            <strong>Locker:</strong>
+            <div class="asignacion">
+                <label for="inputLocker">${datos.locker ? 'Editar número de locker' : 'Ingresar número de locker'}</label>
+                <div class="asignacion-row">
+                    <input type="text" id="inputLocker"
+                           value="${escapeHtml(datos.locker || '')}"
+                           placeholder="Ej: 999" maxlength="100"
+                           autocomplete="off">
+                    <button type="button" class="btn-asignar" id="btnLocker"
+                            onclick="guardarLocker('${escapeJs(datos.rut)}')">
+                        ${datos.locker ? 'Guardar cambios' : 'Asignar locker'}
+                    </button>
+                    <button id="btnLiberarLocker" type="button">
+                            Liberar locker
+                    </button>
+                </div>
+                <small>Ingresa el identificador del locker asignado.</small>
+                <div id="mensajeLocker" class="mensaje"></div>
+            </div>
+        </div>
+
+        <div class="dato">
+            <strong>Bolsa:</strong>
+            <div class="asignacion">
+                <label for="inputBolsa">${datos.bolsa ? 'Editar número de bolsa' : 'Ingresar número de bolsa'}</label>
+                <div class="asignacion-row">
+                    <input type="text" id="inputBolsa"
+                           value="${escapeHtml(datos.bolsa || '')}"
+                           placeholder="Ej: 001234" maxlength="10"
+                           inputmode="numeric" autocomplete="off"
+                           oninput="limitarNumero(this)">
+                    <button type="button" class="btn-asignar" id="btnBolsa"
+                            onclick="guardarBolsa('${escapeJs(datos.rut)}')">
+                        ${datos.bolsa ? 'Guardar cambios' : 'Asignar bolsa'}
+                    </button>
+                </div>
+                <small>Solo números. Entre 1 y 10 dígitos. Los ceros iniciales están permitidos.</small>
+                <div id="mensajeBolsa" class="mensaje"></div>
+            </div>
+        </div>
+
+        <div class="dato">
+            <strong>Candado:</strong>
+            <div class="asignacion">
+                <label for="inputCandado">${datos.candado ? 'Editar número de candado' : 'Ingresar número de candado'}</label>
+                <div class="asignacion-row">
+                    <input type="text" id="inputCandado"
+                           value="${escapeHtml(datos.candado || '')}"
+                           placeholder="Ej: 000123" maxlength="10"
+                           inputmode="numeric" autocomplete="off"
+                           oninput="limitarNumero(this)">
+                    <button type="button" class="btn-asignar" id="btnCandado"
+                            onclick="guardarCandado('${escapeJs(datos.rut)}')">
+                        ${datos.candado ? 'Guardar cambios' : 'Asignar candado'}
+                    </button>
+                </div>
+                <small>Solo números. Entre 1 y 10 dígitos. Los ceros iniciales están permitidos.</small>
+                <div id="mensajeCandado" class="mensaje"></div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-secundario" onclick="nuevaConsulta()">
+            🔎 Nueva consulta
+        </button>
+    `;
+    divResultado.style.display = 'block';
+}
+
+async function guardarLocker(rut) {
+    const input = document.getElementById('inputLocker');
+    const mensaje = document.getElementById('mensajeLocker');
+    const boton = document.getElementById('btnLocker');
+    if (!input || !mensaje || !boton) return;
+
+    const locker = input.value.trim();
+
+    if (!locker) {
+        mostrarMensaje(mensaje, '⚠️ Debes indicar un número de locker.', false);
+        input.focus();
+        return;
+    }
+
+    input.disabled = true;
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    try {
+        const respuesta = await fetch(`${API_URL}/usuarios/${encodeURIComponent(rut)}/asignar`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ locker })
+        });
+
+        let datos = {};
+        try { datos = await respuesta.json(); } catch (_) {}
+
+        if (!respuesta.ok) {
+            mostrarMensaje(mensaje, convertirError(datos.mensaje || 'No se pudo guardar el locker.'), false);
+            input.disabled = false;
+            boton.disabled = false;
+            boton.textContent = 'Guardar cambios';
+            return;
+        }
+
+        mostrarMensaje(mensaje, '✓ Locker guardado correctamente.', true);
+
+        if (datos.usuario) {
+            setTimeout(() => mostrarUsuario(datos.usuario), 900);
+        }
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(mensaje, '❌ No se pudo conectar con el servidor. Inténtalo nuevamente.', false);
+        input.disabled = false;
+        boton.disabled = false;
+        boton.textContent = 'Guardar cambios';
+    }
+}
+
+async function guardarBolsa(rut) {
+    const input = document.getElementById('inputBolsa');
+    const mensaje = document.getElementById('mensajeBolsa');
+    const boton = document.getElementById('btnBolsa');
+    if (!input || !mensaje || !boton) return;
+
+    const bolsa = input.value.trim();
+
+    if (!/^\d{1,10}$/.test(bolsa)) {
+        mostrarMensaje(mensaje, '⚠️ La bolsa debe contener entre 1 y 10 dígitos.', false);
+        input.focus();
+        return;
+    }
+
+    input.disabled = true;
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    try {
+        const respuesta = await fetch(`${API_URL}/usuarios/${encodeURIComponent(rut)}/asignar`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bolsa })
+        });
+
+        let datos = {};
+        try { datos = await respuesta.json(); } catch (_) {}
+
+        if (!respuesta.ok) {
+            mostrarMensaje(mensaje, convertirError(datos.mensaje || 'No se pudo guardar la bolsa.'), false);
+            input.disabled = false;
+            boton.disabled = false;
+            boton.textContent = 'Guardar cambios';
+            return;
+        }
+
+        mostrarMensaje(mensaje, '✓ Bolsa guardada correctamente.', true);
+
+        if (datos.usuario) {
+            setTimeout(() => mostrarUsuario(datos.usuario), 900);
+        }
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(mensaje, '❌ No se pudo conectar con el servidor. Inténtalo nuevamente.', false);
+        input.disabled = false;
+        boton.disabled = false;
+        boton.textContent = 'Guardar cambios';
+    }
+}
+
+async function guardarCandado(rut) {
+    const input = document.getElementById('inputCandado');
+    const mensaje = document.getElementById('mensajeCandado');
+    const boton = document.getElementById('btnCandado');
+    if (!input || !mensaje || !boton) return;
+
+    const candado = input.value.trim();
+
+    if (!/^\d{1,10}$/.test(candado)) {
+        mostrarMensaje(mensaje, '⚠️ El candado debe contener entre 1 y 10 dígitos.', false);
+        input.focus();
+        return;
+    }
+
+    input.disabled = true;
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    try {
+        const respuesta = await fetch(`${API_URL}/usuarios/${encodeURIComponent(rut)}/asignar`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ candado })
+        });
+
+        let datos = {};
+        try { datos = await respuesta.json(); } catch (_) {}
+
+        if (!respuesta.ok) {
+            mostrarMensaje(mensaje, convertirError(datos.mensaje || 'No se pudo guardar el candado.'), false);
+            input.disabled = false;
+            boton.disabled = false;
+            boton.textContent = 'Guardar cambios';
+            return;
+        }
+
+        mostrarMensaje(mensaje, '✓ Candado guardado correctamente.', true);
+
+        if (datos.usuario) {
+            setTimeout(() => mostrarUsuario(datos.usuario), 900);
+        }
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(mensaje, '❌ No se pudo conectar con el servidor. Inténtalo nuevamente.', false);
+        input.disabled = false;
+        boton.disabled = false;
+        boton.textContent = 'Guardar cambios';
+    }
+}
+
+function limitarNumero(input) {
+    input.value = input.value.replace(/\D/g, '').slice(0, 10);
+}
+
+function mostrarMensaje(elemento, texto, exito) {
+    elemento.style.display = 'block';
+    elemento.className = exito ? 'mensaje exito' : 'mensaje error';
+    elemento.textContent = texto;
+}
+
+function mostrarErrorResultado(texto) {
+    const divResultado = document.getElementById('resultado');
+    divResultado.style.display = 'block';
+    divResultado.innerHTML = `
+        <div class="resultado-vacio">
+            <div class="icono">⚠️</div>
+            <p class="error">${escapeHtml(texto)}</p>
+        </div>`;
+}
+
+function mostrarResultadoNoEncontrado() {
+    const divResultado = document.getElementById('resultado');
+    divResultado.style.display = 'block';
+    divResultado.innerHTML = `
+        <div class="resultado-vacio">
+            <div class="icono">🔎</div>
+            <p><strong>No se encontró el usuario.</strong></p>
+            <p>Verifica que el RUT esté correctamente escrito.</p>
+        </div>`;
+}
+
+function convertirError(mensaje) {
+    const texto = String(mensaje || '');
+
+    if (/bolsa.*(duplic|existe|asign)/i.test(texto)) {
+        return '⚠️ Esta bolsa ya está asignada a otro usuario. Verifica el número ingresado.';
+    }
+
+    if (/candado.*(duplic|existe|asign)/i.test(texto)) {
+        return '⚠️ Este candado ya está asignado a otro usuario. Verifica el número ingresado.';
+    }
+
+    return texto;
+}
+
+function nuevaConsulta() {
+    const rutInput = document.getElementById('rutInput');
+    const divResultado = document.getElementById('resultado');
+    rutInput.value = '';
+    divResultado.innerHTML = '';
+    divResultado.style.display = 'none';
+    rutInput.focus();
+}
+
+function escapeHtml(valor) {
+    if (valor === null || valor === undefined) return '';
+    return String(valor)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function escapeJs(valor) {
+    return String(valor)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'");
+}
+
+document.getElementById('rutInput').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        buscarPorRut();
+    }
+});
+
+document.getElementById('rutInput').addEventListener('input', function() {
+    this.value = normalizarRut(this.value);
+});
+
+document
+  .getElementById('btnLiberarLocker')
+  .addEventListener('click', liberarLocker);
+</script>
+
+
+</body>
+
+</html>
+```
