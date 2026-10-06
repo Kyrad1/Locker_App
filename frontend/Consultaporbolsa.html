@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Consulta por Bolsa - ACCIONA</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:#f5f5f5;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    background:white;
+    width:100%;
+    max-width:600px;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 8px 25px rgba(0,0,0,.12);
+    border-top:6px solid #E30613;
+}
+
+.btn-volver{
+    display:inline-block;
+    margin-bottom:20px;
+    text-decoration:none;
+    color:white;
+    background:#555;
+    padding:10px 15px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.btn-volver:hover{
+    background:#444;
+}
+
+.logo-area{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.logo-area h1{
+    color:#E30613;
+    font-size:32px;
+    margin-bottom:5px;
+}
+
+.logo-area p{
+    color:#666;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.instruccion{
+    text-align:center;
+    color:#666;
+    margin-bottom:20px;
+}
+
+.input-group{
+    display:flex;
+    gap:10px;
+}
+
+input{
+    flex:1;
+    padding:14px;
+    border:2px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+}
+
+input:focus{
+    outline:none;
+    border-color:#E30613;
+}
+
+button{
+    background:#E30613;
+    color:white;
+    border:none;
+    padding:14px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    background:#c40510;
+}
+
+.resultado{
+    display:none;
+    margin-top:25px;
+    background:#fafafa;
+    border-left:5px solid #E30613;
+    border-radius:10px;
+    padding:20px;
+}
+
+.dato{
+    padding:12px 0;
+    border-bottom:1px solid #eee;
+}
+
+.dato:last-child{
+    border-bottom:none;
+}
+
+.dato strong{
+    display:block;
+    font-size:12px;
+    color:#666;
+    text-transform:uppercase;
+    margin-bottom:4px;
+}
+
+.valor{
+    font-size:20px;
+    font-weight:700;
+    color:#222;
+}
+
+.error{
+    color:#c00000;
+    text-align:center;
+    font-weight:bold;
+}
+
+.loading{
+    text-align:center;
+    color:#666;
+}
+
+@media(max-width:600px){
+
+    .input-group{
+        flex-direction:column;
+    }
+
+    button{
+        width:100%;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <a href="index.html" class="btn-volver">
+        ← Menú Principal
+    </a>
+
+    <div class="logo-area">
+        <h1>ACCIONA</h1>
+        <p>Consulta de Persona</p>
+    </div>
+
+    <h2>Buscar por Bolsa</h2>
+
+    <p class="instruccion">
+        Ingresa el número de bolsa para identificar al trabajador asignado.
+    </p>
+
+    <div class="input-group">
+
+        <input
+            type="text"
+            id="bolsaInput"
+            placeholder="Ej: 015">
+
+        <button
+            id="btnConsultar"
+            onclick="buscarBolsa()">
+
+            Consultar
+
+        </button>
+
+    </div>
+
+    <div
+        id="resultado"
+        class="resultado">
+    </div>
+
+</div>
+
+<script>
+
+const API_URL = "https://locker-app.onrender.com/api";
+
+async function buscarBolsa(){
+
+    const bolsa =
+        document.getElementById("bolsaInput")
+        .value
+        .trim();
+
+    const resultado =
+        document.getElementById("resultado");
+
+    const boton =
+        document.getElementById("btnConsultar");
+
+    if(!bolsa){
+
+        resultado.style.display = "block";
+
+        resultado.innerHTML = `
+            <p class="error">
+                Ingresa un número de bolsa.
+            </p>
+        `;
+
+        return;
+    }
+
+    resultado.style.display = "block";
+
+    resultado.innerHTML = `
+        <div class="loading">
+            Consultando información...
+        </div>
+    `;
+
+    boton.disabled = true;
+
+    try{
+
+        const response = await fetch(
+            `${API_URL}/usuarios/bolsa/${encodeURIComponent(bolsa)}`
+        );
+
+        if(response.status === 404){
+
+            resultado.innerHTML = `
+                <p class="error">
+                    No se encontró ninguna persona con esa bolsa.
+                </p>
+            `;
+
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        resultado.innerHTML = `
+
+            <div class="dato">
+                <strong>RUT</strong>
+                <div class="valor">${data.rut || "-"}</div>
+            </div>
+
+            <div class="dato">
+                <strong>Nombre</strong>
+                <div class="valor">${data.nombre || "-"}</div>
+            </div>
+
+            <div class="dato">
+                <strong>Locker</strong>
+                <div class="valor">${data.locker || "Sin asignar"}</div>
+            </div>
+
+            <div class="dato">
+                <strong>Bolsa</strong>
+                <div class="valor">${data.bolsa || "Sin asignar"}</div>
+            </div>
+
+            <div class="dato">
+                <strong>Candado</strong>
+                <div class="valor">${data.candado || "Sin asignar"}</div>
+            </div>
+
+        `;
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        resultado.innerHTML = `
+            <p class="error">
+                Error al conectar con el servidor.
+            </p>
+        `;
+    }
+    finally{
+
+        boton.disabled = false;
+
+    }
+
+}
+
+document
+.getElementById("bolsaInput")
+.addEventListener("keydown", function(e){
+
+    if(e.key === "Enter"){
+        buscarBolsa();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
