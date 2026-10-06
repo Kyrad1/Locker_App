@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ACCIONA - Acceso Administrativo</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:#f5f5f5;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.login-container{
+    width:100%;
+    max-width:450px;
+    background:#ffffff;
+    border-radius:16px;
+    padding:40px;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+    border-top:6px solid #E30613;
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.logo h1{
+    color:#E30613;
+    font-size:42px;
+    margin-bottom:8px;
+}
+
+.logo p{
+    color:#666;
+    font-size:15px;
+}
+
+.form-group{
+    margin-bottom:20px;
+}
+
+label{
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+    font-weight:600;
+    color:#333;
+}
+
+input{
+    width:100%;
+    padding:14px;
+    border:2px solid #ddd;
+    border-radius:8px;
+    font-size:16px;
+}
+
+input:focus{
+    outline:none;
+    border-color:#E30613;
+    box-shadow:0 0 0 3px rgba(227,6,19,.12);
+}
+
+.password-wrapper{
+    position:relative;
+}
+
+.password-wrapper input{
+    padding-right:50px;
+}
+
+.toggle-password{
+    position:absolute;
+    top:50%;
+    right:12px;
+    transform:translateY(-50%);
+    border:none;
+    background:none;
+    cursor:pointer;
+    font-size:20px;
+}
+
+.btn-login{
+    width:100%;
+    border:none;
+    background:#E30613;
+    color:white;
+    padding:14px;
+    border-radius:8px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.btn-login:hover{
+    background:#c40510;
+}
+
+.error{
+    text-align:center;
+    color:#b00000;
+    margin-top:15px;
+    font-weight:600;
+}
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    font-size:12px;
+    color:#888;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="logo">
+        <h1>ACCIONA</h1>
+        <p>Sistema de Gestión de Lockers</p>
+    </div>
+
+    <div class="form-group">
+        <label>Usuario</label>
+
+        <input
+            type="text"
+            id="usuario"
+            placeholder="Ingrese usuario">
+    </div>
+
+    <div class="form-group">
+
+        <label>Contraseña</label>
+
+        <div class="password-wrapper">
+
+            <input
+                type="password"
+                id="password"
+                placeholder="Ingrese contraseña">
+
+            <button
+                type="button"
+                class="toggle-password"
+                onclick="togglePassword()">
+
+                👁
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <button
+        class="btn-login"
+        onclick="login()">
+
+        Ingresar
+
+    </button>
+
+    <div id="error" class="error"></div>
+
+    <div class="footer">
+        ACCIONA © Sistema Administrativo
+    </div>
+
+</div>
+
+<script>
+
+const USUARIO = "admin";
+const PASSWORD = "Acciona2026";
+
+if(localStorage.getItem("autenticado") === "true"){
+    window.location.href = "index.html";
+}
+
+function togglePassword(){
+
+    const input =
+        document.getElementById("password");
+
+    input.type =
+        input.type === "password"
+            ? "text"
+            : "password";
+}
+
+function login(){
+
+    const usuario =
+        document.getElementById("usuario").value.trim();
+
+    const password =
+        document.getElementById("password").value.trim();
+
+    const error =
+        document.getElementById("error");
+
+    if(
+        usuario === USUARIO &&
+        password === PASSWORD
+    ){
+
+        localStorage.setItem(
+            "autenticado",
+            "true"
+        );
+
+        window.location.href =
+            "index.html";
+
+    }else{
+
+        error.textContent =
+            "Usuario o contraseña incorrectos";
+
+    }
+}
+
+document.addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key === "Enter"){
+            login();
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

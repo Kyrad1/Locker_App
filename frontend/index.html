@@ -108,11 +108,58 @@ body{
     }
 
 }
+.btn-logout{
+    margin-top:30px;
+    width:100%;
+    padding:12px;
+    background:#555;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn-logout:hover{
+    background:#444;
+}
 
 </style>
 </head>
 
 <body>
+    
+    <div>
+    <button class="btn-logout" onclick="logout()">
+
+    Cerrar Sesión
+
+    </button>
+
+    <script>
+
+if(
+    localStorage.getItem("autenticado")
+    !== "true"
+){
+    window.location.href =
+        "https://loginacciona.vercel.app/";
+}
+
+</script>
+<script>
+
+function logout(){
+
+    localStorage.removeItem(
+        "autenticado"
+    );
+
+    window.location.href =
+        "https://loginacciona.vercel.app/";
+}
+
+</script>
 
 <div class="container">
 
@@ -128,7 +175,7 @@ body{
 
         <a
             class="card"
-            href="https://consultalockeraccionaoperarios.vercel.app/"
+            href="https://consultalockeroperariosadmin.vercel.app/"
         >
             <div class="icono">👷</div>
 
