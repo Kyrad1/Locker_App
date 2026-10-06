@@ -382,8 +382,13 @@ rutInput.addEventListener('input', () => {
     }
 });
 
-// Bolsa y candado: solo números.
-[lockerInput, bolsaInput, candadoInput].forEach(input => {
+// Locker: permite números, guiones y barras.
+lockerInput.addEventListener('input', () => {
+    lockerInput.value = lockerInput.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9/-]/g, '');
+});
+
+// Bolsa y candado: solo números, máximo 10 dígitos.
+[bolsaInput, candadoInput].forEach(input => {
     input.addEventListener('input', () => {
         input.value = input.value.replace(/\D/g, '').slice(0, 10);
     });

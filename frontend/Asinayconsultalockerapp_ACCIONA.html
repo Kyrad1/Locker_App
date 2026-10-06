@@ -404,6 +404,7 @@ select:focus {
 
 <script>
 const API_URL = 'https://locker-app.onrender.com/api';
+let usuarioActual = null;
 
 function normalizarRut(valor) {
     return String(valor || '')
@@ -482,57 +483,78 @@ async function buscarPorRut() {
     }
 }
 async function liberarLocker() {
-  if (!usuarioActual || !usuarioActual.rut) return;
 
-  const confirmar = confirm(
-    `¿Seguro que quieres liberar el locker ${usuarioActual.locker} de este usuario?`
-  );
-
-  if (!confirmar) return;
-
-  const btn = document.getElementById('btnLiberarLocker');
-
-  try {
-    btn.disabled = true;
-    btn.textContent = 'Liberando...';
-
-    const response = await fetch(
-      `${API_URL}/usuarios/${usuarioActual.rut}/liberar-locker`,
-      {
-        method: 'PUT'
-      }
-    );
-
-    const datos = await response.json();
-
-    if (!response.ok) {
-      throw new Error(datos.mensaje || 'No se pudo liberar el locker');
+    if (!usuarioActual || !usuarioActual.rut) {
+        alert('No hay usuario seleccionado');
+        return;
     }
 
-    usuarioActual = datos.usuario;
+    const confirmar = confirm(
+        `¿Seguro que deseas liberar el locker ${usuarioActual.locker}?`
+    );
 
-    mostrarUsuario(usuarioActual);
+    if (!confirmar) return;
 
-    alert('Locker liberado correctamente');
+    try {
 
-  } catch (error) {
-    alert(error.message);
+        const response = await fetch(
+            `${API_URL}/usuarios/${encodeURIComponent(usuarioActual.rut)}/liberar-locker`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Liberar locker';
-  }
+        const texto = await response.text();
+
+        console.log('STATUS:', response.status);
+        console.log('RESPUESTA DEL SERVIDOR:', texto);
+
+        let datos;
+
+        try {
+            datos = JSON.parse(texto);
+        } catch (error) {
+            console.error('La respuesta NO es JSON:', texto);
+
+            throw new Error(
+                `El servidor respondió algo que no es JSON. Status: ${response.status}`
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                datos.mensaje || 'No se pudo liberar el locker'
+            );
+        }
+
+        usuarioActual = datos.usuario;
+
+        mostrarUsuario(datos.usuario);
+
+        alert('✅ Locker liberado correctamente');
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            error.message ||
+            'No se pudo conectar con el servidor'
+        );
+    }
 }
 
 function mostrarUsuario(datos) {
+    usuarioActual = datos;
+
     const divResultado = document.getElementById('resultado');
+
     const bolsaAsignada = Boolean(datos.bolsa);
     const candadoAsignado = Boolean(datos.candado);
     const todoAsignado = bolsaAsignada && candadoAsignado;
-    const btnLiberarLocker = document.getElementById('btnLiberarLocker');
-
-    btnLiberarLocker.style.display =
-        usuario.locker ? 'inline-block' : 'none';
 
     divResultado.innerHTML = `
         <h3>✓ Usuario encontrado</h3>
@@ -543,75 +565,112 @@ function mostrarUsuario(datos) {
                 : '🟡 Falta completar una o más asignaciones.'}
         </div>
 
-        <div class="dato"><strong>RUT:</strong> ${escapeHtml(datos.rut)}</div>
-        <div class="dato"><strong>Nombre:</strong> ${escapeHtml(datos.nombre)}</div>
+        <div class="dato"><strong>RUT:</strong> ${escapeHtml(datos.rut || '')}</div>
+        <div class="dato"><strong>Nombre:</strong> ${escapeHtml(datos.nombre || '')}</div>
 
-        <div class="dato">
-            <strong>Locker:</strong>
-            <div class="asignacion">
-                <label for="inputLocker">${datos.locker ? 'Editar número de locker' : 'Ingresar número de locker'}</label>
-                <div class="asignacion-row">
-                    <input type="text" id="inputLocker"
-                           value="${escapeHtml(datos.locker || '')}"
-                           placeholder="Ej: 999" maxlength="100"
-                           autocomplete="off">
-                    <button type="button" class="btn-asignar" id="btnLocker"
-                            onclick="guardarLocker('${escapeJs(datos.rut)}')">
-                        ${datos.locker ? 'Guardar cambios' : 'Asignar locker'}
-                    </button>
-                    <button id="btnLiberarLocker" type="button">
-                            Liberar locker
-                    </button>
-                </div>
-                <small>Ingresa el identificador del locker asignado.</small>
-                <div id="mensajeLocker" class="mensaje"></div>
-            </div>
-        </div>
+        
 
         <div class="dato">
             <strong>Bolsa:</strong>
+
             <div class="asignacion">
-                <label for="inputBolsa">${datos.bolsa ? 'Editar número de bolsa' : 'Ingresar número de bolsa'}</label>
+                <label>Bolsa</label>
+
                 <div class="asignacion-row">
-                    <input type="text" id="inputBolsa"
-                           value="${escapeHtml(datos.bolsa || '')}"
-                           placeholder="Ej: 001234" maxlength="10"
-                           inputmode="numeric" autocomplete="off"
-                           oninput="limitarNumero(this)">
-                    <button type="button" class="btn-asignar" id="btnBolsa"
-                            onclick="guardarBolsa('${escapeJs(datos.rut)}')">
+                    <input
+                        type="text"
+                        id="inputBolsa"
+                        value="${escapeHtml(datos.bolsa || '')}"
+                        maxlength="10"
+                        placeholder="Ej: 123"
+                        oninput="limitarNumero(this)"
+                    >
+
+                    <button
+                        type="button"
+                        class="btn-asignar"
+                        id="btnBolsa"
+                        onclick="guardarBolsa('${escapeJs(datos.rut)}')">
                         ${datos.bolsa ? 'Guardar cambios' : 'Asignar bolsa'}
                     </button>
                 </div>
-                <small>Solo números. Entre 1 y 10 dígitos. Los ceros iniciales están permitidos.</small>
+
                 <div id="mensajeBolsa" class="mensaje"></div>
             </div>
         </div>
 
         <div class="dato">
             <strong>Candado:</strong>
+
             <div class="asignacion">
-                <label for="inputCandado">${datos.candado ? 'Editar número de candado' : 'Ingresar número de candado'}</label>
+                <label>Candado</label>
+
                 <div class="asignacion-row">
-                    <input type="text" id="inputCandado"
-                           value="${escapeHtml(datos.candado || '')}"
-                           placeholder="Ej: 000123" maxlength="10"
-                           inputmode="numeric" autocomplete="off"
-                           oninput="limitarNumero(this)">
-                    <button type="button" class="btn-asignar" id="btnCandado"
-                            onclick="guardarCandado('${escapeJs(datos.rut)}')">
+                    <input
+                        type="text"
+                        id="inputCandado"
+                        value="${escapeHtml(datos.candado || '')}"
+                        maxlength="10"
+                        placeholder="Ej: 123"
+                        oninput="limitarNumero(this)"
+                    >
+
+                    <button
+                        type="button"
+                        class="btn-asignar"
+                        id="btnCandado"
+                        onclick="guardarCandado('${escapeJs(datos.rut)}')">
                         ${datos.candado ? 'Guardar cambios' : 'Asignar candado'}
                     </button>
                 </div>
-                <small>Solo números. Entre 1 y 10 dígitos. Los ceros iniciales están permitidos.</small>
+
                 <div id="mensajeCandado" class="mensaje"></div>
             </div>
         </div>
+        
+        <div class="dato">
+            <strong>Locker:</strong>
+            <div class="asignacion">
+                <label>Locker</label>
 
-        <button type="button" class="btn-secundario" onclick="nuevaConsulta()">
+                <div class="asignacion-row">
+                    <input
+                        type="text"
+                        id="inputLocker"
+                        value="${escapeHtml(datos.locker || '')}"
+                        placeholder="Ej: 123-12"
+                    >
+
+                    <button
+                        type="button"
+                        class="btn-asignar"
+                        id="btnLocker"
+                        onclick="guardarLocker('${escapeJs(datos.rut)}')">
+                        ${datos.locker ? 'Guardar cambios' : 'Asignar locker'}
+                    </button>
+
+                    ${datos.locker ? `
+                    <button
+                        type="button"
+                        id="btnLiberarLocker"
+                        onclick="liberarLocker()">
+                        Liberar locker
+                    </button>
+                    ` : ''}
+                </div>
+
+                <div id="mensajeLocker" class="mensaje"></div>
+            </div>
+        </div>
+
+        <button
+            type="button"
+            class="btn-secundario"
+            onclick="nuevaConsulta()">
             🔎 Nueva consulta
         </button>
     `;
+
     divResultado.style.display = 'block';
 }
 
@@ -821,12 +880,13 @@ function nuevaConsulta() {
 
 function escapeHtml(valor) {
     if (valor === null || valor === undefined) return '';
+
     return String(valor)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+        .replace(/'/g, '&#39;');
 }
 
 function escapeJs(valor) {
@@ -846,9 +906,7 @@ document.getElementById('rutInput').addEventListener('input', function() {
     this.value = normalizarRut(this.value);
 });
 
-document
-  .getElementById('btnLiberarLocker')
-  .addEventListener('click', liberarLocker);
+
 </script>
 
 

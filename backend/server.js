@@ -92,6 +92,48 @@ app.get('/api/usuarios/:rut', async (req, res) => {
 
 
 // =====================================================
+// CONSULTAR USUARIO POR LOCKER
+// =====================================================
+
+app.get('/api/usuarios/locker/:locker', async (req, res) => {
+
+  const { locker } = req.params;
+
+  try {
+
+    const resultado = await pool.query(
+      `
+        SELECT rut, nombre, locker, bolsa, candado
+        FROM usuarios
+        WHERE locker = $1
+      `,
+      [locker]
+    );
+
+    if (resultado.rows.length === 0) {
+
+      return res.status(404).json({
+        mensaje: 'No se encontró ninguna persona con ese locker'
+      });
+
+    }
+
+    res.json(resultado.rows[0]);
+
+  } catch (error) {
+
+    console.error('Error al consultar locker:', error);
+
+    res.status(500).json({
+      mensaje: 'Error en el servidor al consultar el locker'
+    });
+
+  }
+
+});
+
+
+// =====================================================
 // ASIGNAR BOLSA Y/O CANDADO
 // =====================================================
 //

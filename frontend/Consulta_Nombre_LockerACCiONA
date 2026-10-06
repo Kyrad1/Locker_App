@@ -1,0 +1,797 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Persona - ACCIONA</title>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        color: #333;
+    }
+
+    .container {
+        background: #fff;
+        width: 100%;
+        max-width: 560px;
+        padding: 32px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-top: 6px solid #E30613;
+    }
+
+    .logo-area {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+    .logo-area h1 {
+        color: #E30613;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .logo-area p {
+        color: #666;
+        margin-top: 5px;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 22px;
+    }
+
+    .instruccion {
+        text-align: center;
+        color: #666;
+        margin-bottom: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    input {
+        flex: 1;
+        min-width: 0;
+        padding: 14px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 17px;
+        transition: 0.2s;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #E30613;
+        box-shadow: 0 0 0 3px rgba(227,6,19,0.12);
+    }
+
+    button {
+        background: #E30613;
+        color: #fff;
+        border: none;
+        padding: 13px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #c40510;
+        transform: translateY(-1px);
+    }
+
+    button:disabled {
+        background: #aaa;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .ayuda-locker {
+        text-align: center;
+        color: #777;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .resultado {
+        margin-top: 25px;
+        padding: 20px;
+        border-radius: 10px;
+        background: #fafafa;
+        border-left: 5px solid #E30613;
+        display: none;
+    }
+
+    .resultado h3 {
+        color: #E30613;
+        margin-bottom: 15px;
+    }
+
+    .estado {
+        margin-bottom: 15px;
+        padding: 11px 13px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .estado.ok {
+        background: #e7f7ed;
+        color: #146c2e;
+    }
+
+    .estado.pendiente {
+        background: #fff5df;
+        color: #9a5b00;
+    }
+
+    .dato {
+        padding: 14px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 16px;
+    }
+
+    .dato:last-child {
+        border-bottom: none;
+    }
+
+    .dato strong {
+        display: block;
+        color: #666;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        letter-spacing: 0.4px;
+    }
+
+    .dato .valor {
+        font-size: 20px;
+        font-weight: 700;
+        color: #222;
+    }
+
+    .dato.destacado {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+
+    .dato.destacado .valor {
+        font-size: 25px;
+        color: #E30613;
+    }
+
+    .sin-asignar {
+        color: #d97706 !important;
+        font-size: 16px !important;
+    }
+
+    .error-box,
+    .loading-box {
+        text-align: center;
+        padding: 10px 0;
+    }
+
+    .error-box .icono,
+    .loading-box .icono {
+        font-size: 30px;
+        margin-bottom: 8px;
+    }
+
+    .error {
+        color: #b00000;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .loading {
+        color: #666;
+        font-style: italic;
+    }
+
+    .btn-nueva {
+        width: 100%;
+        margin-top: 18px;
+        background: #555;
+    }
+
+    .btn-nueva:hover {
+        background: #444;
+    }
+
+    @media (max-width: 600px) {
+
+        body {
+            align-items: flex-start;
+        }
+
+        .container {
+            padding: 25px 18px;
+            margin-top: 10px;
+        }
+
+        .input-group {
+            flex-direction: column;
+        }
+
+        .input-group button {
+            width: 100%;
+        }
+
+        .logo-area h1 {
+            font-size: 28px;
+        }
+
+        .dato .valor {
+            font-size: 19px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo-area">
+        <h1>ACCIONA</h1>
+        <p>Consulta de Persona</p>
+    </div>
+
+    <h2>Buscar por Locker</h2>
+
+    <p class="instruccion">
+        Ingresa el número del locker para conocer quién lo tiene asignado.
+    </p>
+
+    <div class="input-group">
+
+        <input
+            type="text"
+            id="lockerInput"
+            placeholder="Ej: 152"
+            autocomplete="off"
+            maxlength="100"
+            inputmode="numeric"
+            aria-label="Número de locker"
+        >
+
+        <button
+            type="button"
+            id="btnConsultar"
+            onclick="buscarPorLocker()"
+        >
+            Consultar
+        </button>
+
+    </div>
+
+    <p class="ayuda-locker">
+        Ejemplo: 152
+    </p>
+
+    <div
+        id="resultado"
+        class="resultado"
+        aria-live="polite"
+    ></div>
+
+</div>
+
+<script>
+
+const API_URL = 'https://locker-app.onrender.com/api';
+
+// =====================================================
+// NORMALIZAR LOCKER
+// =====================================================
+
+function normalizarLocker(valor) {
+
+    return String(valor || '')
+        .trim()
+        .replace(/\s+/g, '');
+}
+
+
+// =====================================================
+// BUSCAR USUARIO POR LOCKER
+// =====================================================
+
+async function buscarPorLocker() {
+
+    const lockerInput =
+        document.getElementById('lockerInput');
+
+    const divResultado =
+        document.getElementById('resultado');
+
+    const btnConsultar =
+        document.getElementById('btnConsultar');
+
+    const locker =
+        normalizarLocker(lockerInput.value);
+
+    lockerInput.value = locker;
+
+
+    // =================================================
+    // VALIDAR
+    // =================================================
+
+    if (!locker) {
+
+        mostrarError(
+            '⚠️ Ingresa un número de locker para realizar la consulta.'
+        );
+
+        lockerInput.focus();
+
+        return;
+    }
+
+
+    // =================================================
+    // MOSTRAR CARGANDO
+    // =================================================
+
+    divResultado.style.display = 'block';
+
+    divResultado.innerHTML = `
+
+        <div class="loading-box">
+
+            <div class="icono">🔎</div>
+
+            <p class="loading">
+                Consultando información del locker...
+            </p>
+
+        </div>
+
+    `;
+
+
+    btnConsultar.disabled = true;
+
+    btnConsultar.textContent = 'Consultando...';
+
+
+    // =================================================
+    // CONSULTAR API
+    // =================================================
+
+    try {
+
+        const respuesta = await fetch(
+
+            `${API_URL}/usuarios/locker/${encodeURIComponent(locker)}`
+
+        );
+
+
+        let datos = {};
+
+        try {
+
+            datos = await respuesta.json();
+
+        } catch (_) {
+
+            datos = {};
+
+        }
+
+
+        // =================================================
+        // LOCKER NO ENCONTRADO
+        // =================================================
+
+        if (respuesta.status === 404) {
+
+            mostrarNoEncontrado();
+
+            return;
+        }
+
+
+        // =================================================
+        // OTRO ERROR
+        // =================================================
+
+        if (!respuesta.ok) {
+
+            mostrarError(
+
+                datos.mensaje ||
+                datos.error ||
+                'No se pudo realizar la consulta. Inténtalo nuevamente.'
+
+            );
+
+            return;
+        }
+
+
+        // =================================================
+        // MOSTRAR USUARIO
+        // =================================================
+
+        mostrarUsuario(datos);
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        mostrarError(
+
+            '❌ No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente.'
+
+        );
+
+    }
+
+    finally {
+
+        btnConsultar.disabled = false;
+
+        btnConsultar.textContent = 'Consultar';
+    }
+}
+
+
+// =====================================================
+// MOSTRAR DATOS DEL USUARIO
+// =====================================================
+
+function mostrarUsuario(datos) {
+
+    const divResultado =
+        document.getElementById('resultado');
+
+
+    const tieneLocker =
+        Boolean(datos.locker);
+
+    const tieneBolsa =
+        Boolean(datos.bolsa);
+
+    const tieneCandado =
+        Boolean(datos.candado);
+
+
+    const completo =
+        tieneLocker &&
+        tieneBolsa &&
+        tieneCandado;
+
+
+    divResultado.innerHTML = `
+
+        <h3>
+            ✓ Persona encontrada
+        </h3>
+
+
+        <div class="estado ${completo ? 'ok' : 'pendiente'}">
+
+            ${
+                completo
+                    ? '🟢 La información está completa.'
+                    : '🟡 Hay información que todavía no está asignada.'
+            }
+
+        </div>
+
+
+        <!-- RUT -->
+
+        <div class="dato destacado">
+
+            <strong>
+                RUT
+            </strong>
+
+            <div class="valor">
+
+                ${escapeHtml(datos.rut)}
+
+            </div>
+
+        </div>
+
+
+        <!-- NOMBRE -->
+
+        <div class="dato">
+
+            <strong>
+                Nombre
+            </strong>
+
+            <div class="valor">
+
+                ${escapeHtml(datos.nombre)}
+
+            </div>
+
+        </div>
+
+
+        <!-- LOCKER -->
+
+        <div class="dato destacado">
+
+            <strong>
+                Locker
+            </strong>
+
+            <div class="valor">
+
+                ${escapeHtml(datos.locker)}
+
+            </div>
+
+        </div>
+
+
+        <!-- BOLSA -->
+
+        <div class="dato destacado">
+
+            <strong>
+                Número de bolsa
+            </strong>
+
+            <div class="valor ${
+                tieneBolsa
+                    ? ''
+                    : 'sin-asignar'
+            }">
+
+                ${
+                    tieneBolsa
+                        ? escapeHtml(datos.bolsa)
+                        : '⚠️ Sin asignar'
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- CANDADO -->
+
+        <div class="dato destacado">
+
+            <strong>
+                Número de candado
+            </strong>
+
+            <div class="valor ${
+                tieneCandado
+                    ? ''
+                    : 'sin-asignar'
+            }">
+
+                ${
+                    tieneCandado
+                        ? escapeHtml(datos.candado)
+                        : '⚠️ Sin asignar'
+                }
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="btn-nueva"
+            onclick="nuevaConsulta()"
+        >
+            🔎 Nueva consulta
+        </button>
+
+    `;
+
+
+    divResultado.style.display = 'block';
+}
+
+
+// =====================================================
+// LOCKER NO ENCONTRADO
+// =====================================================
+
+function mostrarNoEncontrado() {
+
+    const divResultado =
+        document.getElementById('resultado');
+
+
+    divResultado.style.display = 'block';
+
+
+    divResultado.innerHTML = `
+
+        <div class="error-box">
+
+            <div class="icono">
+                🔎
+            </div>
+
+            <p>
+
+                <strong>
+                    No encontramos ninguna persona con ese locker.
+                </strong>
+
+            </p>
+
+            <p style="margin-top:8px;">
+
+                Verifica que el número del locker sea correcto
+                o que actualmente esté asignado.
+
+            </p>
+
+        </div>
+
+    `;
+}
+
+
+// =====================================================
+// MOSTRAR ERROR
+// =====================================================
+
+function mostrarError(texto) {
+
+    const divResultado =
+        document.getElementById('resultado');
+
+
+    divResultado.style.display = 'block';
+
+
+    divResultado.innerHTML = `
+
+        <div class="error-box">
+
+            <div class="icono">
+                ⚠️
+            </div>
+
+            <p class="error">
+
+                ${escapeHtml(texto)}
+
+            </p>
+
+        </div>
+
+    `;
+}
+
+
+// =====================================================
+// NUEVA CONSULTA
+// =====================================================
+
+function nuevaConsulta() {
+
+    const lockerInput =
+        document.getElementById('lockerInput');
+
+    const divResultado =
+        document.getElementById('resultado');
+
+
+    lockerInput.value = '';
+
+    divResultado.innerHTML = '';
+
+    divResultado.style.display = 'none';
+
+    lockerInput.focus();
+}
+
+
+// =====================================================
+// PROTECCIÓN HTML
+// =====================================================
+
+function escapeHtml(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined
+    ) {
+
+        return '';
+
+    }
+
+
+    return String(valor)
+
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+
+// =====================================================
+// ENTER PARA CONSULTAR
+// =====================================================
+
+document
+    .getElementById('lockerInput')
+    .addEventListener(
+        'keydown',
+        function(event) {
+
+            if (event.key === 'Enter') {
+
+                event.preventDefault();
+
+                buscarPorLocker();
+
+            }
+
+        }
+    );
+
+
+// =====================================================
+// LIMPIAR CARACTERES NO NUMÉRICOS
+// =====================================================
+
+document
+    .getElementById('lockerInput')
+    .addEventListener(
+        'input',
+        function() {
+
+            this.value =
+                this.value.replace(/\D/g, '');
+
+        }
+    );
+
+</script>
+
+</body>
+</html>
+```
