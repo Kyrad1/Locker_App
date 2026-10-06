@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Consulta Locker ACCIONA</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f4f4;
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.container{
+    background:white;
+    width:90%;
+    max-width:500px;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 0 20px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#E30613;
+    margin-bottom:10px;
+}
+
+p{
+    text-align:center;
+    color:#666;
+}
+
+.input-group{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+}
+
+input{
+    flex:1;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+}
+
+button{
+    background:#E30613;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#c40510;
+}
+
+.resultado{
+    margin-top:20px;
+    display:none;
+}
+
+.card{
+    background:#fafafa;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+}
+
+.item{
+    margin-bottom:12px;
+}
+
+.label{
+    font-size:12px;
+    color:#666;
+    text-transform:uppercase;
+}
+
+.valor{
+    font-size:18px;
+    font-weight:bold;
+}
+
+.error{
+    color:red;
+    text-align:center;
+}
+
+@media(max-width:600px){
+
+    .input-group{
+        flex-direction:column;
+    }
+
+    button{
+        width:100%;
+    }
+
+}
+.btn-volver{
+    display:inline-block;
+    margin-bottom:20px;
+    text-decoration:none;
+    color:white;
+    background:#555;
+    padding:10px 15px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.btn-volver:hover{
+    background:#444;
+}
+
+</style>
+</head>
+
+<body>
+    <div class="container">
+
+    <a
+        href="https://TU-MENU-PRINCIPAL.vercel.app/"
+        class="btn-volver"
+    >
+        ← Menú principal
+    </a>
+
+    <div class="logo-area">
+        <h1>ACCIONA</h1>
+        <p>Consulta de Persona</p>
+    </div>
+
+</div>
+
+<div class="container">
+
+    <h1>ACCIONA</h1>
+
+    <p>
+        Buscar trabajador por número de locker
+    </p>
+
+    <div class="input-group">
+
+        <input
+            type="text"
+            id="locker"
+            placeholder="Número de locker">
+
+        <button onclick="buscarLocker()">
+            Buscar
+        </button>
+
+    </div>
+
+    <div id="resultado" class="resultado"></div>
+
+</div>
+
+<script>
+
+const API_URL = "https://locker-app.onrender.com/api";
+
+async function buscarLocker(){
+
+    const locker =
+        document.getElementById("locker").value.trim();
+
+    const resultado =
+        document.getElementById("resultado");
+
+    if(!locker){
+
+        resultado.style.display = "block";
+
+        resultado.innerHTML = `
+            <p class="error">
+                Ingresa un número de locker
+            </p>
+        `;
+
+        return;
+    }
+
+    resultado.style.display = "block";
+
+    resultado.innerHTML = `
+        <p>Consultando...</p>
+    `;
+
+    try{
+
+        const response = await fetch(
+            `${API_URL}/usuarios/locker/${locker}`
+        );
+
+        if(response.status === 404){
+
+            resultado.innerHTML = `
+                <p class="error">
+                    Locker no encontrado
+                </p>
+            `;
+
+            return;
+        }
+
+        const data = await response.json();
+
+        resultado.innerHTML = `
+
+            <div class="card">
+
+                <div class="item">
+                    <div class="label">Nombre</div>
+                    <div class="valor">${data.nombre || "-"}</div>
+                </div>
+
+                <div class="item">
+                    <div class="label">RUT</div>
+                    <div class="valor">${data.rut || "-"}</div>
+                </div>
+
+                <div class="item">
+                    <div class="label">Locker</div>
+                    <div class="valor">${data.locker || "-"}</div>
+                </div>
+
+                <div class="item">
+                    <div class="label">Bolsa</div>
+                    <div class="valor">${data.bolsa || "Sin asignar"}</div>
+                </div>
+
+                <div class="item">
+                    <div class="label">Candado</div>
+                    <div class="valor">${data.candado || "Sin asignar"}</div>
+                </div>
+
+            </div>
+
+        `;
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        resultado.innerHTML = `
+            <p class="error">
+                No fue posible conectar con el servidor.
+            </p>
+        `;
+    }
+}
+
+document
+.getElementById("locker")
+.addEventListener("keypress", function(e){
+
+    if(e.key === "Enter"){
+        buscarLocker();
+    }
+
+});
+
+</script>
+
+</body>
+</html>

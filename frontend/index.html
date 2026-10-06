@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ACCIONA - Sistema de Gestión</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background:#f5f5f5;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:900px;
+    background:white;
+    border-radius:16px;
+    padding:40px;
+    box-shadow:0 10px 30px rgba(0,0,0,.12);
+    border-top:6px solid #E30613;
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.logo h1{
+    color:#E30613;
+    font-size:42px;
+    margin-bottom:8px;
+}
+
+.logo p{
+    color:#666;
+    font-size:16px;
+}
+
+.menu{
+    margin-top:35px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
+    gap:20px;
+}
+
+.card{
+    text-decoration:none;
+    color:#333;
+    background:#fafafa;
+    border:1px solid #e5e5e5;
+    border-radius:12px;
+    padding:30px 20px;
+    text-align:center;
+    transition:.2s ease;
+}
+
+.card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+    border-color:#E30613;
+}
+
+.icono{
+    font-size:48px;
+    margin-bottom:15px;
+}
+
+.card h2{
+    font-size:20px;
+    margin-bottom:10px;
+}
+
+.card p{
+    color:#666;
+    font-size:14px;
+    line-height:1.5;
+}
+
+.footer{
+    margin-top:35px;
+    text-align:center;
+    color:#888;
+    font-size:13px;
+}
+
+@media(max-width:600px){
+
+    .container{
+        padding:25px 15px;
+    }
+
+    .logo h1{
+        font-size:32px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        <h1>ACCIONA</h1>
+
+        <p>
+            Sistema de Gestión de Lockers, Bolsas y Candados
+        </p>
+    </div>
+
+    <div class="menu">
+
+        <a
+            class="card"
+            href="https://consultalockeraccionaoperarios.vercel.app/"
+        >
+            <div class="icono">👷</div>
+
+            <h2>Consulta Operario</h2>
+
+            <p>
+                Permite consultar información mediante el RUT del trabajador.
+            </p>
+        </a>
+
+        <a
+            class="card"
+            href="https://consultanombrelockeracciona.vercel.app/"
+        >
+            <div class="icono">🔎</div>
+
+            <h2>Buscar por Locker</h2>
+
+            <p>
+                Busca a una persona utilizando el número de locker asignado.
+            </p>
+        </a>
+
+        <a
+            class="card"
+            href="https://registrousuarioacciona.vercel.app/"
+        >
+            <div class="icono">➕</div>
+
+            <h2>Registrar Usuario</h2>
+
+            <p>
+                Crear nuevos registros de trabajadores en el sistema.
+            </p>
+        </a>
+
+        <a
+            class="card"
+            href="https://asignar-bolsalocker-acciona.vercel.app/"
+        >
+            <div class="icono">📦</div>
+
+            <h2>Asignar Recursos</h2>
+
+            <p>
+                Asignar locker, bolsa y candado a trabajadores registrados.
+            </p>
+        </a>
+
+    </div>
+
+    <div class="footer">
+        Sistema ACCIONA • Gestión de Lockers
+    </div>
+
+</div>
+
+</body>
+</html>
