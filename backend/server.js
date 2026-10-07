@@ -173,6 +173,47 @@ app.get('/api/usuarios/bolsa/:bolsa', async (req, res) => {
 
 });
 
+// =====================================================
+// CONSULTAR USUARIO POR CANDADO  
+// =====================================================
+
+app.get('/api/usuarios/candado/:candado', async (req, res) => {
+
+  const { candado } = req.params;
+
+  try {
+
+    const resultado = await pool.query(
+      `
+        SELECT rut, nombre, locker, bolsa, candado
+        FROM usuarios
+        WHERE candado = $1
+      `,
+      [candado]
+    );
+
+    if (resultado.rows.length === 0) {
+
+      return res.status(404).json({
+        mensaje: 'No se encontró ninguna persona con ese candado'
+      });
+
+    }
+
+    res.json(resultado.rows[0]);
+
+  } catch (error) {
+
+    console.error('Error al consultar el candado:', error);
+
+    res.status(500).json({
+      mensaje: 'Error en el servidor al consultar el candado'
+    });
+
+  }
+
+});
+
 
 // =====================================================
 // ASIGNAR BOLSA Y/O CANDADO
