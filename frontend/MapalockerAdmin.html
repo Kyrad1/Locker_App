@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Subir Mapa - ACCIONA</title>
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        color: #333;
+    }
+
+    .container {
+        background: #fff;
+        width: 100%;
+        max-width: 480px;
+        padding: 32px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-top: 6px solid #E30613;
+    }
+
+    .logo-area { text-align: center; margin-bottom: 20px; }
+    .logo-area h1 { color: #E30613; font-size: 32px; letter-spacing: 1px; }
+    .logo-area p { color: #666; margin-top: 5px; }
+
+    input[type="file"] {
+        width: 100%;
+        padding: 14px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 14px;
+    }
+
+    button {
+        width: 100%;
+        background: #E30613;
+        color: #fff;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    button:hover { background: #c40510; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+
+    #msg { margin-top: 12px; text-align: center; font-size: 14px; color: #666; }
+
+    .ver {
+        display: block;
+        margin-top: 16px;
+        text-align: center;
+        color: #555;
+        font-size: 14px;
+    }
+</style>
+</head>
+
+<body>
+    <div class="container">
+
+    <a
+        href="index.html"
+        class="btn-volver"
+    >
+        ← Menú principal
+    </a>
+
+
+<div class="container">
+
+    <div class="logo-area">
+        <h1>ACCIONA</h1>
+        <p>Subir mapa</p>
+    </div>
+
+    <input type="file" id="archivo" accept="image/*,application/pdf">
+
+    <button type="button" id="btnSubir" onclick="subir()">Subir mapa</button>
+
+    <p id="msg"></p>
+
+    <a class="ver" href="mapa.html" target="_blank">Ver mapa →</a>
+
+</div>
+
+<script>
+
+const API_URL = 'https://locker-app-1n42.onrender.com/api';
+
+async function subir() {
+
+    const archivo = document.getElementById('archivo').files[0];
+    const msg = document.getElementById('msg');
+    const btn = document.getElementById('btnSubir');
+
+    if (!archivo) {
+        msg.textContent = 'Selecciona un archivo.';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+
+    btn.disabled = true;
+    msg.textContent = 'Subiendo...';
+
+    try {
+
+        const r = await fetch(`${API_URL}/mapa`, { method: 'POST', body: formData });
+
+        msg.textContent = r.ok ? '✓ Mapa actualizado.' : 'Error al subir el archivo.';
+
+    } catch (_) {
+        msg.textContent = 'No se pudo conectar con el servidor.';
+    }
+
+    btn.disabled = false;
+}
+
+</script>
+
+</body>
+</html>

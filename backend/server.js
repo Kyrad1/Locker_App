@@ -1,7 +1,6 @@
 // server.js
 
 const express = require('express');
-const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
@@ -9,20 +8,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Mapa (imagen o PDF)
+app.use('/api/mapa', require('./mapa.routes'));
+
 
 // =====================================================
-// CONEXIÓN A POSTGRESQL
+// CONEXIÓN A POSTGRESQL (ver db.js)
 // =====================================================
 
-const pool = new Pool({
-  connectionString:
-    process.env.DATABASE_URL ||
-    'postgresql://admin:rJ2auBYk47YA4P6nL6QUpTgMjKx9KRWf@dpg-db2k2es9v7es738crm2g-a.ohio-postgres.render.com/consultalocker',
-
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const pool = require('./db');
 
 
 // =====================================================
@@ -216,6 +210,43 @@ app.get('/api/usuarios/candado/:candado', async (req, res) => {
 
 
 // =====================================================
+// LIBERAR LOCKER
+app.put('/api/usuarios/:rut/liberar-locker', async (req, res) => {
+  const { rut } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+        UPDATE usuarios
+        SET locker = NULL
+        WHERE rut = $1
+        RETURNING rut, nombre, locker, bolsa, candado
+      `,
+      [rut]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
+    res.json({
+      mensaje: 'Locker liberado correctamente',
+      usuario: resultado.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al liberar locker:', error);
+
+    res.status(500).json({
+      mensaje: 'Error interno del servidor'
+    });
+  }
+});
+
+
+// =====================================================
 // ASIGNAR BOLSA Y/O CANDADO
 // =====================================================
 //
@@ -264,40 +295,6 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
         mensaje: 'Debes indicar un locker, una bolsa o un candado'
     });
 }
-// LIBERAR LOCKER
-app.put('/api/usuarios/:rut/liberar-locker', async (req, res) => {
-  const { rut } = req.params;
-
-  try {
-    const resultado = await pool.query(
-      `
-        UPDATE usuarios
-        SET locker = NULL
-        WHERE rut = $1
-        RETURNING rut, nombre, locker, bolsa, candado
-      `,
-      [rut]
-    );
-
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({
-        mensaje: 'Usuario no encontrado'
-      });
-    }
-
-    res.json({
-      mensaje: 'Locker liberado correctamente',
-      usuario: resultado.rows[0]
-    });
-
-  } catch (error) {
-    console.error('Error al liberar locker:', error);
-
-    res.status(500).json({
-      mensaje: 'Error interno del servidor'
-    });
-  }
-});
 
   // ---------------------------------------------------
   // Validar formato de bolsa

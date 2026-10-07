@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa - ACCIONA</title>
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f5f5f5;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 16px;
+        color: #333;
+    }
+
+    .container {
+        background: #fff;
+        width: 100%;
+        max-width: 900px;
+        padding: 32px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-top: 6px solid #E30613;
+        align-self: flex-start;
+    }
+
+    .logo-area { text-align: center; margin-bottom: 20px; }
+    .logo-area h1 { color: #E30613; font-size: 32px; letter-spacing: 1px; }
+    .logo-area p { color: #666; margin-top: 5px; }
+
+    .visor img, .visor iframe {
+        width: 100%;
+        border: 2px solid #eee;
+        border-radius: 10px;
+        display: block;
+    }
+
+    .visor iframe { height: 75vh; }
+
+    .vacio { text-align: center; color: #666; padding: 40px 0; }
+
+</style>
+</head>
+
+<body>
+    <div class="container">
+
+    <a
+        href="Consulta_Locker_ACCIONA_Operarios.html"
+        class="btn-volver"
+    >
+        ← Volver a consulta
+    </a>
+
+
+<div class="container">
+
+    <div class="logo-area">
+        <h1>ACCIONA</h1>
+        <p>Mapa de ubicación</p>
+    </div>
+
+    <div class="visor" id="visor">
+        <p class="vacio">Cargando mapa...</p>
+    </div>
+
+</div>
+
+<script>
+
+const API_URL = 'https://locker-app-1n42.onrender.com/api';
+
+function cargar() {
+
+    const visor = document.getElementById('visor');
+    const url = `${API_URL}/mapa?t=${Date.now()}`;
+
+    fetch(url, { method: 'HEAD' })
+        .then(r => {
+
+            if (!r.ok) {
+                visor.innerHTML = '<p class="vacio">Aún no hay un mapa publicado.</p>';
+                return;
+            }
+
+            const tipo = r.headers.get('Content-Type') || '';
+
+            visor.innerHTML = tipo.includes('pdf')
+                ? `<iframe src="${url}"></iframe>`
+                : `<img src="${url}" alt="Mapa">`;
+        })
+        .catch(() => {
+            visor.innerHTML = '<p class="vacio">No se pudo cargar el mapa.</p>';
+        });
+}
+
+cargar();
+
+</script>
+
+</body>
+</html>
