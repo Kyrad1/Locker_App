@@ -17,7 +17,7 @@ app.use(express.json());
 const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL ||
-    'postgresql://locker_app_web_user:bEjWRybK0BAJJ9ClZBNa1RUoe7bbOYr4@dpg-dapb71n40ujc739316ug-a.virginia-postgres.render.com/locker_app_web',
+    'postgresql://admin:rJ2auBYk47YA4P6nL6QUpTgMjKx9KRWf@dpg-db2k2es9v7es738crm2g-a.ohio-postgres.render.com/consultalocker',
 
   ssl: {
     rejectUnauthorized: false
