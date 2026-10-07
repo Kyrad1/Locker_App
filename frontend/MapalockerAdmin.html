@@ -34,6 +34,15 @@
     .logo-area h1 { color: #E30613; font-size: 32px; letter-spacing: 1px; }
     .logo-area p { color: #666; margin-top: 5px; }
 
+    input[type="password"] {
+        width: 100%;
+        padding: 14px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+        margin-bottom: 14px;
+    }
+
     input[type="file"] {
         width: 100%;
         padding: 14px;
@@ -71,15 +80,6 @@
 </head>
 
 <body>
-    <div class="container">
-
-    <a
-        href="index.html"
-        class="btn-volver"
-    >
-        ← Menú principal
-    </a>
-
 
 <div class="container">
 
@@ -87,6 +87,8 @@
         <h1>ACCIONA</h1>
         <p>Subir mapa</p>
     </div>
+
+    <input type="password" id="clave" placeholder="Contraseña" autocomplete="off">
 
     <input type="file" id="archivo" accept="image/*,application/pdf">
 
@@ -105,8 +107,14 @@ const API_URL = 'https://locker-app-1n42.onrender.com/api';
 async function subir() {
 
     const archivo = document.getElementById('archivo').files[0];
+    const clave = document.getElementById('clave').value;
     const msg = document.getElementById('msg');
     const btn = document.getElementById('btnSubir');
+
+    if (!clave) {
+        msg.textContent = 'Ingresa la contraseña.';
+        return;
+    }
 
     if (!archivo) {
         msg.textContent = 'Selecciona un archivo.';
@@ -121,9 +129,16 @@ async function subir() {
 
     try {
 
-        const r = await fetch(`${API_URL}/mapa`, { method: 'POST', body: formData });
+        const r = await fetch(`${API_URL}/mapa`, {
+            method: 'POST',
+            headers: { 'x-clave': clave },
+            body: formData
+        });
 
-        msg.textContent = r.ok ? '✓ Mapa actualizado.' : 'Error al subir el archivo.';
+        msg.textContent =
+            r.ok ? '✓ Mapa actualizado.' :
+            r.status === 401 ? '❌ Contraseña incorrecta.' :
+            'Error al subir el archivo.';
 
     } catch (_) {
         msg.textContent = 'No se pudo conectar con el servidor.';

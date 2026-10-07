@@ -34,8 +34,20 @@ router.get('/', async (req, res) => {
     res.send(rows[0].datos);
 });
 
+// Protege la subida con una contraseña (variable de entorno CLAVE_MAPA)
+function pedirClave(req, res, next) {
+
+    const clave = process.env.CLAVE_MAPA;
+
+    if (!clave || req.get('x-clave') !== clave) {
+        return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    }
+
+    next();
+}
+
 // Subir / reemplazar el mapa
-router.post('/', upload.single('archivo'), async (req, res) => {
+router.post('/', pedirClave, upload.single('archivo'), async (req, res) => {
 
     if (!req.file) return res.sendStatus(400);
 
