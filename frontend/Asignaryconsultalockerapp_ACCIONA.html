@@ -362,6 +362,98 @@ select:focus {
     background: #f3f3f3;
 }
 
+
+/* Ventana de lockers disponibles */
+.modal-lockers {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: auto;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-lockers.abierto {
+    display: flex;
+}
+
+.modal-contenido {
+    width: 100%;
+    max-width: 700px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.modal-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.modal-encabezado h2 {
+    margin: 0;
+    color: #E30613;
+    text-align: left;
+}
+
+.btn-cerrar {
+    padding: 7px 12px;
+    background: #555;
+}
+
+.btn-disponibles {
+    width: 100%;
+    margin: 15px 0;
+}
+
+.lista-lockers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.locker-libre {
+    padding: 12px 5px;
+    border: 1px solid #198754;
+    background: #e7f7ed;
+    color: #146c2e;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.locker-libre:hover {
+    background: #198754;
+    color: white;
+    transform: none;
+}
+
+.resumen-lockers {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+
+@media (max-width: 600px) {
+    .modal-contenido {
+        padding: 18px;
+    }
+
+    .modal-encabezado h2 {
+        font-size: 20px;
+    }
+}
+
 </style>
 
 
@@ -426,6 +518,56 @@ select:focus {
     <p class="info-rut">Ejemplo válido: 12345678K</p>
     <div id="resultado" class="resultado" aria-live="polite"></div>
 </div>
+
+<p class="info-rut">Ejemplo válido: 12345678K</p>
+
+<button
+    type="button"
+    class="btn-disponibles"
+    onclick="abrirLockersDisponibles()">
+    Ver lockers disponibles
+</button>
+
+<div id="resultado" class="resultado" aria-live="polite"></div>
+</div>
+
+<!-- Ventana de lockers disponibles -->
+<div
+    id="modalLockers"
+    class="modal-lockers"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloModalLockers">
+
+    <div class="modal-contenido">
+        <div class="modal-encabezado">
+            <h2 id="tituloModalLockers">Lockers disponibles</h2>
+
+            <button
+                type="button"
+                class="btn-cerrar"
+                onclick="cerrarLockersDisponibles()">
+                Cerrar
+            </button>
+        </div>
+
+        <p>Selecciona un locker para colocarlo en el campo que estás editando.</p>
+
+        <div id="resumenLockers" class="resumen-lockers">
+            Consultando disponibilidad...
+        </div>
+
+        <button
+            type="button"
+            onclick="cargarLockersDisponibles()">
+            Actualizar lista
+        </button>
+
+        <div id="listaLockers" class="lista-lockers"></div>
+    </div>
+</div>
+</div>
+
 
 
 <script>
@@ -508,70 +650,125 @@ async function buscarPorRut() {
         btnConsultar.disabled = false;
     }
 }
-async function liberarLocker() {
 
+async function guardarLocker(rut, campo) {
+    const esSegundo = campo === 'locker2';
+    const inputId = esSegundo ? 'inputLocker2' : 'inputLocker';
+    const mensajeId = esSegundo ? 'mensajeLocker2' : 'mensajeLocker';
+    const botonId = esSegundo ? 'btnLocker2' : 'btnLocker';
+
+    const input = document.getElementById(inputId);
+    const mensaje = document.getElementById(mensajeId);
+    const boton = document.getElementById(botonId);
+
+    if (!input || !mensaje || !boton) return;
+
+    const locker = input.value.trim();
+
+    if (locker && !/^\d{3}-\d{2}$/.test(locker)) {
+        mostrarMensaje(
+            mensaje,
+            '⚠️ Usa el formato XXX-YY, por ejemplo 123-12.',
+            false
+        );
+        input.focus();
+        return;
+    }
+
+    boton.disabled = true;
+    input.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    try {
+        const respuesta = await fetch(
+            `${API_URL}/usuarios/${encodeURIComponent(rut)}/asignar`,
+            {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [campo]: locker || null })
+            }
+        );
+
+        let datos = {};
+        try {
+            datos = await respuesta.json();
+        } catch (_) {}
+
+        if (!respuesta.ok) {
+            throw new Error(
+                datos.mensaje || 'No se pudo guardar el locker.'
+            );
+        }
+
+        if (datos.usuario) {
+            mostrarUsuario(datos.usuario);
+        } else {
+            mostrarMensaje(mensaje, '✓ Locker guardado.', true);
+        }
+    } catch (error) {
+        console.error(error);
+        mostrarMensaje(mensaje, error.message, false);
+    } finally {
+        // Si mostrarUsuario reconstruyó el resultado, estos elementos
+        // pueden haber sido reemplazados por otros nuevos.
+        const inputActual = document.getElementById(inputId);
+        const botonActual = document.getElementById(botonId);
+
+        if (inputActual) inputActual.disabled = false;
+        if (botonActual) {
+            botonActual.disabled = false;
+            botonActual.textContent = 'Guardar';
+        }
+    }
+}
+
+async function liberarLockerCampo(campo) {
     if (!usuarioActual || !usuarioActual.rut) {
-        alert('No hay usuario seleccionado');
+        alert('No hay usuario seleccionado.');
+        return;
+    }
+
+    if (campo !== 'locker' && campo !== 'locker2') return;
+
+    const valorLocker = usuarioActual[campo];
+
+    if (!valorLocker) {
+        alert('Este campo no tiene un locker asignado.');
         return;
     }
 
     const confirmar = confirm(
-        `¿Seguro que deseas liberar el locker ${usuarioActual.locker}?`
+        `¿Seguro que deseas liberar ${campo === 'locker' ? 'el locker 1' : 'el locker 2'} (${valorLocker})?`
     );
 
     if (!confirmar) return;
 
     try {
-
-        const response = await fetch(
+        const respuesta = await fetch(
             `${API_URL}/usuarios/${encodeURIComponent(usuarioActual.rut)}/liberar-locker`,
             {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ campo })
             }
         );
 
-        const texto = await response.text();
+        const datos = await respuesta.json();
 
-        console.log('STATUS:', response.status);
-        console.log('RESPUESTA DEL SERVIDOR:', texto);
-
-        let datos;
-
-        try {
-            datos = JSON.parse(texto);
-        } catch (error) {
-            console.error('La respuesta NO es JSON:', texto);
-
-            throw new Error(
-                `El servidor respondió algo que no es JSON. Status: ${response.status}`
-            );
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                datos.mensaje || 'No se pudo liberar el locker'
-            );
+        if (!respuesta.ok) {
+            throw new Error(datos.mensaje || 'No se pudo liberar el locker.');
         }
 
         usuarioActual = datos.usuario;
-
         mostrarUsuario(datos.usuario);
-
-        alert('✅ Locker liberado correctamente');
-
+        alert('✓ Locker liberado correctamente.');
     } catch (error) {
-
         console.error(error);
-
-        alert(
-            error.message ||
-            'No se pudo conectar con el servidor'
-        );
+        alert(error.message || 'No se pudo conectar con el servidor.');
     }
 }
+
+
 
 function mostrarUsuario(datos) {
     usuarioActual = datos;
@@ -594,14 +791,83 @@ function mostrarUsuario(datos) {
         <div class="dato"><strong>RUT:</strong> ${escapeHtml(datos.rut || '')}</div>
         <div class="dato"><strong>Nombre:</strong> ${escapeHtml(datos.nombre || '')}</div>
 
-        
+        <div class="dato">
+            <strong>Locker 1:</strong>
+            <div class="asignacion">
+                <div class="asignacion-row">
+                    <input
+                        type="text"
+                        id="inputLocker"
+                        value="${escapeHtml(datos.locker || '')}"
+                        placeholder="Ej: 123-12">
+
+                    <button
+                        type="button"
+                        id="btnLocker"
+                        onclick="guardarLocker('${escapeJs(datos.rut)}', 'locker')">
+                        Guardar
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="seleccionarDestinoLocker('locker')">
+                        Ver disponibles
+                    </button>
+                </div>
+
+                ${datos.locker ? `
+                    <button
+                        type="button"
+                        class="btn-secundario"
+                        onclick="liberarLockerCampo('locker')">
+                        Liberar locker 1
+                    </button>
+                ` : ''}
+
+                <div id="mensajeLocker" class="mensaje"></div>
+            </div>
+        </div>
+
+        <div class="dato">
+            <strong>Locker 2:</strong>
+            <div class="asignacion">
+                <div class="asignacion-row">
+                    <input
+                        type="text"
+                        id="inputLocker2"
+                        value="${escapeHtml(datos.locker2 || '')}"
+                        placeholder="Ej: 123-12">
+
+                    <button
+                        type="button"
+                        id="btnLocker2"
+                        onclick="guardarLocker('${escapeJs(datos.rut)}', 'locker2')">
+                        Guardar
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="seleccionarDestinoLocker('locker2')">
+                        Ver disponibles
+                    </button>
+                </div>
+
+                ${datos.locker2 ? `
+                    <button
+                        type="button"
+                        class="btn-secundario"
+                        onclick="liberarLockerCampo('locker2')">
+                        Liberar locker 2
+                    </button>
+                ` : ''}
+
+                <div id="mensajeLocker2" class="mensaje"></div>
+            </div>
+        </div>
 
         <div class="dato">
             <strong>Bolsa:</strong>
-
             <div class="asignacion">
-                <label>Bolsa</label>
-
                 <div class="asignacion-row">
                     <input
                         type="text"
@@ -609,28 +875,22 @@ function mostrarUsuario(datos) {
                         value="${escapeHtml(datos.bolsa || '')}"
                         maxlength="10"
                         placeholder="Ej: 123"
-                        oninput="limitarNumero(this)"
-                    >
+                        oninput="limitarNumero(this)">
 
                     <button
                         type="button"
-                        class="btn-asignar"
                         id="btnBolsa"
                         onclick="guardarBolsa('${escapeJs(datos.rut)}')">
                         ${datos.bolsa ? 'Guardar cambios' : 'Asignar bolsa'}
                     </button>
                 </div>
-
                 <div id="mensajeBolsa" class="mensaje"></div>
             </div>
         </div>
 
         <div class="dato">
             <strong>Candado:</strong>
-
             <div class="asignacion">
-                <label>Candado</label>
-
                 <div class="asignacion-row">
                     <input
                         type="text"
@@ -638,54 +898,16 @@ function mostrarUsuario(datos) {
                         value="${escapeHtml(datos.candado || '')}"
                         maxlength="10"
                         placeholder="Ej: 123"
-                        oninput="limitarNumero(this)"
-                    >
+                        oninput="limitarNumero(this)">
 
                     <button
                         type="button"
-                        class="btn-asignar"
                         id="btnCandado"
                         onclick="guardarCandado('${escapeJs(datos.rut)}')">
                         ${datos.candado ? 'Guardar cambios' : 'Asignar candado'}
                     </button>
                 </div>
-
                 <div id="mensajeCandado" class="mensaje"></div>
-            </div>
-        </div>
-        
-        <div class="dato">
-            <strong>Locker:</strong>
-            <div class="asignacion">
-                <label>Locker</label>
-
-                <div class="asignacion-row">
-                    <input
-                        type="text"
-                        id="inputLocker"
-                        value="${escapeHtml(datos.locker || '')}"
-                        placeholder="Ej: 123-12"
-                    >
-
-                    <button
-                        type="button"
-                        class="btn-asignar"
-                        id="btnLocker"
-                        onclick="guardarLocker('${escapeJs(datos.rut)}')">
-                        ${datos.locker ? 'Guardar cambios' : 'Asignar locker'}
-                    </button>
-
-                    ${datos.locker ? `
-                    <button
-                        type="button"
-                        id="btnLiberarLocker"
-                        onclick="liberarLocker()">
-                        Liberar locker
-                    </button>
-                    ` : ''}
-                </div>
-
-                <div id="mensajeLocker" class="mensaje"></div>
             </div>
         </div>
 
@@ -700,55 +922,8 @@ function mostrarUsuario(datos) {
     divResultado.style.display = 'block';
 }
 
-async function guardarLocker(rut) {
-    const input = document.getElementById('inputLocker');
-    const mensaje = document.getElementById('mensajeLocker');
-    const boton = document.getElementById('btnLocker');
-    if (!input || !mensaje || !boton) return;
 
-    const locker = input.value.trim();
 
-    if (!locker) {
-        mostrarMensaje(mensaje, '⚠️ Debes indicar un número de locker.', false);
-        input.focus();
-        return;
-    }
-
-    input.disabled = true;
-    boton.disabled = true;
-    boton.textContent = 'Guardando...';
-
-    try {
-        const respuesta = await fetch(`${API_URL}/usuarios/${encodeURIComponent(rut)}/asignar`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ locker })
-        });
-
-        let datos = {};
-        try { datos = await respuesta.json(); } catch (_) {}
-
-        if (!respuesta.ok) {
-            mostrarMensaje(mensaje, convertirError(datos.mensaje || 'No se pudo guardar el locker.'), false);
-            input.disabled = false;
-            boton.disabled = false;
-            boton.textContent = 'Guardar cambios';
-            return;
-        }
-
-        mostrarMensaje(mensaje, '✓ Locker guardado correctamente.', true);
-
-        if (datos.usuario) {
-            setTimeout(() => mostrarUsuario(datos.usuario), 900);
-        }
-    } catch (error) {
-        console.error(error);
-        mostrarMensaje(mensaje, '❌ No se pudo conectar con el servidor. Inténtalo nuevamente.', false);
-        input.disabled = false;
-        boton.disabled = false;
-        boton.textContent = 'Guardar cambios';
-    }
-}
 
 async function guardarBolsa(rut) {
     const input = document.getElementById('inputBolsa');
@@ -931,6 +1106,88 @@ document.getElementById('rutInput').addEventListener('keydown', function(event) 
 document.getElementById('rutInput').addEventListener('input', function() {
     this.value = normalizarRut(this.value);
 });
+
+let campoLockerDestino = 'locker';
+
+function seleccionarDestinoLocker(campo) {
+    campoLockerDestino = campo;
+    abrirLockersDisponibles();
+}
+
+async function abrirLockersDisponibles() {
+    const modal = document.getElementById('modalLockers');
+    modal.classList.add('abierto');
+    await cargarLockersDisponibles();
+}
+
+function cerrarLockersDisponibles() {
+    document.getElementById('modalLockers').classList.remove('abierto');
+}
+
+async function cargarLockersDisponibles() {
+    const resumen = document.getElementById('resumenLockers');
+    const lista = document.getElementById('listaLockers');
+
+    resumen.textContent = 'Consultando lockers disponibles...';
+    lista.innerHTML = '';
+
+    try {
+        const respuesta = await fetch(`${API_URL}/lockers/disponibles`);
+
+        let datos = {};
+        try {
+            datos = await respuesta.json();
+        } catch (_) {}
+
+        if (!respuesta.ok) {
+            throw new Error(
+                datos.mensaje || 'No se pudo consultar la disponibilidad.'
+            );
+        }
+
+        const lockers = Array.isArray(datos.lockers) ? datos.lockers : [];
+
+        resumen.textContent =
+            `Lockers disponibles: ${datos.total ?? lockers.length}`;
+
+        if (lockers.length === 0) {
+            lista.innerHTML = '<p>No hay lockers disponibles.</p>';
+            return;
+        }
+
+        lista.innerHTML = lockers.map(codigo => `
+            <button
+                type="button"
+                class="locker-libre"
+                onclick="elegirLockerDisponible('${escapeJs(codigo)}')">
+                ${escapeHtml(codigo)}
+            </button>
+        `).join('');
+
+    } catch (error) {
+        console.error(error);
+        resumen.textContent = error.message ||
+            'Error al consultar los lockers disponibles.';
+    }
+}
+
+function elegirLockerDisponible(codigo) {
+    const inputId = campoLockerDestino === 'locker2'
+        ? 'inputLocker2'
+        : 'inputLocker';
+
+    const input = document.getElementById(inputId);
+
+    if (!input) {
+        alert('Primero consulta un usuario para seleccionar el campo.');
+        return;
+    }
+
+    input.value = codigo;
+    cerrarLockersDisponibles();
+    input.focus();
+}
+
 
 
 </script>
