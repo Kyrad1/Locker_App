@@ -99,7 +99,7 @@ app.get('/api/usuarios/:rut', async (req, res) => {
 
     const resultado = await pool.query(
       `
-        SELECT rut, nombre, locker, bolsa, candado
+        SELECT rut, nombre, locker,locker2, bolsa, candado
         FROM usuarios
         WHERE rut = $1
       `,
@@ -309,13 +309,16 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
   const { rut } = req.params;
 
-  let { locker, bolsa, candado } = req.body;
+  let { locker, locker2, bolsa, candado } = req.body;
 
 
   // ---------------------------------------------------
   // Limpiar valores recibidos
   // ---------------------------------------------------
-
+  locker2 =
+  locker2 !== undefined && locker2 !== null
+    ? String(locker).trim()
+    : null;
   locker =
   locker !== undefined && locker !== null
     ? String(locker).trim()
@@ -334,7 +337,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
   // ---------------------------------------------------
   // Validar que venga al menos uno
   // ---------------------------------------------------
-  if (!locker && !bolsa && !candado) {
+  if (!locker && !locker2 && !bolsa && !candado) {
     return res.status(400).json({
         mensaje: 'Debes indicar un locker, una bolsa o un candado'
     });
@@ -432,6 +435,32 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
 
             return res.status(409).json({
                 mensaje: `El locker ${locker} ya está asignado a otro RUT`
+            });
+
+        }
+    }
+    // -------------------------------------------------
+// VALIDAR LOCKER2
+// -------------------------------------------------
+
+    if (locker2) {
+
+        const lockerOcupado = await client.query(
+            `
+                SELECT rut
+                FROM usuarios
+                WHERE locker = $1
+                AND rut <> $2
+            `,
+            [locker2, rut]
+        );
+
+        if (lockerOcupado.rows.length > 0) {
+
+            await client.query('ROLLBACK');
+
+            return res.status(409).json({
+                mensaje: `El locker ${locker2} ya está asignado a otro RUT`
             });
 
         }
