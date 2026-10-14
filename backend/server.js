@@ -43,6 +43,52 @@ pool.query('SELECT NOW()', (err) => {
 });
 
 
+/**
+ * GET /api/lockers/disponibles
+ * Devuelve los lockers disponibles del inventario.
+ */
+app.get('/api/lockers/disponibles', async (req, res) => {
+    try {
+        const query = `
+            SELECT l.codigo
+            FROM lockers l
+            WHERE l.estado_operativo = 'operativo'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM usuarios u
+                  CROSS JOIN LATERAL (
+                      VALUES
+                          (TRIM(u.locker)),
+                          (TRIM(u.locker2))
+                  ) AS asignacion(valor)
+                  WHERE asignacion.valor IS NOT NULL
+                    AND asignacion.valor <> ''
+                    AND RIGHT(asignacion.valor, 6) = l.codigo
+              )
+            ORDER BY l.codigo;
+        `;
+
+        const resultado = await pool.query(query);
+
+        res.json({
+            total: resultado.rows.length,
+            lockers: resultado.rows.map(fila => fila.codigo)
+        });
+
+    } catch (error) {
+        console.error(
+            'Error al consultar lockers disponibles:',
+            error
+        );
+
+        res.status(500).json({
+            error: 'Error al consultar los lockers disponibles'
+        });
+    }
+});
+
+
+
 // =====================================================
 // CONSULTAR USUARIO POR RUT
 // =====================================================
