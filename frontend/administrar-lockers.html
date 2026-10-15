@@ -85,10 +85,10 @@
     <div class="field">
       <label for="filtroEstado">Filtrar por estado</label>
       <select id="filtroEstado">
-        <option value="">Todos los estados</option>
-        <option value="libre">Libre</option>
-        <option value="asignado">Asignado</option>
-        <option value="roto">Roto / fuera de servicio</option>
+        <option value="operativo">Libre / Operativo</option>
+        <option value="tomado">Tomado</option>
+        <option value="roto_chapa">Roto - chapa</option>
+        <option value="roto_puerta">Roto - puerta</option>
       </select>
     </div>
     <button class="secondary" id="refreshBtn" type="button">Actualizar</button>
@@ -107,7 +107,9 @@
     <div class="legend">
       <span><i class="dot" style="background:#22c55e"></i>Libre</span>
       <span><i class="dot" style="background:#eab308"></i>Asignado</span>
-      <span><i class="dot" style="background:#f97316"></i>Roto / fuera de servicio</span>
+      <span><i class="dot" style="background:#f97316"></i>roto_chapa</span>
+      <span><i class="dot" style="background:#f97316"></i>roto_puerta</span>
+      <span><i class="dot" style="background:#97001c"></i>tomado</span>
     </div>
     <div id="lockerGrid" class="locker-grid"><div class="empty">Cargando inventario...</div></div>
   </section>
