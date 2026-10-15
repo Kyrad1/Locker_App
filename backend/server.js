@@ -255,16 +255,25 @@ app.get('/api/usuarios/candado/:candado', async (req, res) => {
 
 // =====================================================
 // LIBERAR LOCKER
+
 app.put('/api/usuarios/:rut/liberar-locker', async (req, res) => {
   const { rut } = req.params;
+  const campo = req.body?.campo || 'locker';
+
+  // Solo permitimos liberar estos dos campos.
+  if (!['locker', 'locker2'].includes(campo)) {
+    return res.status(400).json({
+      mensaje: 'Campo inválido. Debe ser locker o locker2.'
+    });
+  }
 
   try {
     const resultado = await pool.query(
       `
         UPDATE usuarios
-        SET locker = NULL
+        SET ${campo} = NULL
         WHERE rut = $1
-        RETURNING rut, nombre, locker, bolsa, candado
+        RETURNING rut, nombre, locker, locker2, bolsa, candado
       `,
       [rut]
     );
@@ -275,16 +284,18 @@ app.put('/api/usuarios/:rut/liberar-locker', async (req, res) => {
       });
     }
 
-    res.json({
-      mensaje: 'Locker liberado correctamente',
+    return res.json({
+      mensaje: campo === 'locker2'
+        ? 'Segundo locker liberado correctamente'
+        : 'Locker liberado correctamente',
       usuario: resultado.rows[0]
     });
 
   } catch (error) {
     console.error('Error al liberar locker:', error);
 
-    res.status(500).json({
-      mensaje: 'Error interno del servidor'
+    return res.status(500).json({
+      mensaje: 'Error interno del servidor al liberar el locker'
     });
   }
 });
