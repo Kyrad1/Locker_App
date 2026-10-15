@@ -849,6 +849,91 @@ app.post('/api/usuarios', async (req, res) => {
 
 });
 
+/* =========================================
+   INVENTARIO COMPLETO PARA ADMINISTRACIÓN
+========================================= */
+
+app.get('/api/lockers/administracion', async (req, res) => {
+  try {
+    const resultado = await pool.query(`
+      SELECT
+        l.codigo,
+        l.estado_operativo,
+        EXISTS (
+          SELECT 1
+          FROM usuarios u
+          CROSS JOIN LATERAL (
+            VALUES
+              (TRIM(u.locker)),
+              (TRIM(u.locker2))
+          ) AS a(valor)
+          WHERE a.valor IS NOT NULL
+            AND a.valor <> ''
+            AND RIGHT(a.valor, 6) = l.codigo
+        ) AS asignado
+      FROM lockers l
+      ORDER BY l.codigo
+    `);
+
+    res.json({
+      total: resultado.rows.length,
+      lockers: resultado.rows
+    });
+
+  } catch (error) {
+    console.error('Error al consultar inventario:', error);
+    res.status(500).json({
+      mensaje: 'Error al consultar el inventario de lockers'
+    });
+  }
+});
+
+
+/* =========================================
+   CAMBIAR ESTADO OPERATIVO DE UN LOCKER
+========================================= */
+
+app.put('/api/lockers/:codigo/estado', async (req, res) => {
+  const { codigo } = req.params;
+  const { estado_operativo } = req.body;
+
+  if (!['operativo', 'fuera_servicio'].includes(estado_operativo)) {
+    return res.status(400).json({
+      mensaje: 'Estado inválido'
+    });
+  }
+
+  try {
+    const resultado = await pool.query(
+      `
+        UPDATE lockers
+        SET estado_operativo = $1
+        WHERE codigo = $2
+        RETURNING codigo, estado_operativo
+      `,
+      [estado_operativo, codigo]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        mensaje: 'No se encontró el locker indicado'
+      });
+    }
+
+    res.json({
+      mensaje: 'Estado del locker actualizado correctamente',
+      locker: resultado.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al cambiar estado del locker:', error);
+    res.status(500).json({
+      mensaje: 'Error al actualizar el estado del locker'
+    });
+  }
+});
+
+
 
 // =====================================================
 // INICIAR SERVIDOR

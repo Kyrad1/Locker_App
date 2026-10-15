@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administración de Lockers - ACCIONA</title>
+<style>
+  :root { --red:#b5121b; --red-dark:#8f1017; --bg:#f4f5f7; --text:#20242a; --muted:#667085; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:var(--text); }
+  header { background:var(--red); color:#fff; padding:20px clamp(16px,4vw,40px); box-shadow:0 3px 10px #0002; }
+  header h1 { margin:0 0 5px; font-size:clamp(22px,3vw,30px); }
+  header p { margin:0; opacity:.9; }
+  main { max-width:1400px; margin:0 auto; padding:24px clamp(12px,3vw,32px) 40px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:18px; }
+  .field { display:flex; flex-direction:column; gap:6px; min-width:170px; flex:1; }
+  label { font-size:13px; font-weight:700; }
+  input,select,button { font:inherit; }
+  input,select { padding:11px 12px; border:1px solid #d0d5dd; border-radius:8px; background:#fff; min-height:42px; }
+  button { cursor:pointer; border:0; border-radius:8px; padding:11px 15px; font-weight:700; }
+  .primary { background:var(--red); color:#fff; }
+  .primary:hover { background:var(--red-dark); }
+  .secondary { background:#e4e7ec; color:#252a31; }
+  .summary { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:12px; margin:18px 0 22px; }
+  .stat { background:#fff; border:1px solid #e4e7ec; border-radius:12px; padding:16px; }
+  .stat .num { font-size:28px; font-weight:800; margin-bottom:4px; }
+  .stat .caption { font-size:13px; color:var(--muted); }
+  .panel { background:#fff; border:1px solid #e4e7ec; border-radius:12px; padding:18px; margin-bottom:18px; }
+  .panel h2 { font-size:18px; margin:0 0 8px; }
+  .hint { color:var(--muted); font-size:13px; line-height:1.5; margin:0 0 14px; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; font-size:13px; color:#475467; margin-bottom:16px; }
+  .dot { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+  .locker-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:9px; }
+  .locker { border:2px solid transparent; border-radius:9px; min-height:66px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 4px; color:#243047; }
+  .locker .code { font-weight:800; font-size:14px; }
+  .locker .state { font-size:11px; }
+  .locker.libre { background:#dcfce7; border-color:#86efac; }
+  .locker.asignado { background:#fef3a6; border-color:#facc15; }
+  .locker.roto { background:#ffedd5; border-color:#fb923c; }
+  .locker.seleccionado { outline:3px solid #1d4ed8; outline-offset:1px; }
+  .locker:hover { filter:brightness(.97); }
+  .selection { display:grid; grid-template-columns:minmax(150px,1fr) minmax(180px,1fr) auto; gap:12px; align-items:end; }
+  .status-line { font-size:14px; color:#344054; margin-top:10px; min-height:20px; }
+  .message { padding:12px 14px; border-radius:8px; margin-bottom:14px; display:none; }
+  .message.error { display:block; background:#fee4e2; color:#912018; }
+  .message.ok { display:block; background:#dcfae6; color:#05603a; }
+  .empty { padding:24px; text-align:center; color:var(--muted); }
+  @media(max-width:700px) {
+    .summary { grid-template-columns:repeat(2,minmax(120px,1fr)); }
+    .selection { grid-template-columns:1fr; }
+    .selection button { width:100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>ACCIONA | Administración de lockers</h1>
+  <p>Consulta el estado de todos los lockers y marca los que estén fuera de servicio.</p>
+</header>
+<main>
+  <div id="message" class="message"></div>
+  <div class="toolbar">
+    <div class="field">
+      <label for="buscar">Buscar locker</label>
+      <input id="buscar" type="search" placeholder="Ej.: 004-07">
+    </div>
+    <div class="field">
+      <label for="filtroCuerpo">Filtrar por cuerpo</label>
+      <select id="filtroCuerpo"><option value="">Todos los cuerpos</option></select>
+    </div>
+    <div class="field">
+      <label for="filtroEstado">Filtrar por estado</label>
+      <select id="filtroEstado">
+        <option value="">Todos los estados</option>
+        <option value="libre">Libre</option>
+        <option value="asignado">Asignado</option>
+        <option value="roto">Roto / fuera de servicio</option>
+      </select>
+    </div>
+    <button class="secondary" id="refreshBtn" type="button">Actualizar</button>
+  </div>
+
+  <section class="summary">
+    <div class="stat"><div class="num" id="totalCount">—</div><div class="caption">Total de lockers</div></div>
+    <div class="stat"><div class="num" id="libreCount">—</div><div class="caption">Libres</div></div>
+    <div class="stat"><div class="num" id="asignadoCount">—</div><div class="caption">Asignados</div></div>
+    <div class="stat"><div class="num" id="rotoCount">—</div><div class="caption">Rotos / fuera de servicio</div></div>
+  </section>
+
+  <section class="panel">
+    <h2>Inventario visual</h2>
+    <p class="hint">Selecciona una tarjeta para administrar su estado operativo. El estado “Asignado” se calcula automáticamente a partir de los lockers registrados en los usuarios; no se cambia manualmente desde esta pantalla.</p>
+    <div class="legend">
+      <span><i class="dot" style="background:#22c55e"></i>Libre</span>
+      <span><i class="dot" style="background:#eab308"></i>Asignado</span>
+      <span><i class="dot" style="background:#f97316"></i>Roto / fuera de servicio</span>
+    </div>
+    <div id="lockerGrid" class="locker-grid"><div class="empty">Cargando inventario...</div></div>
+  </section>
+
+  <section class="panel">
+    <h2>Modificar locker seleccionado</h2>
+    <p class="hint">Puedes marcar un locker como operativo o fuera de servicio. Si un locker está asignado a una persona, cambiarlo a fuera de servicio no elimina la asignación, pero impedirá que se ofrezca como disponible.</p>
+    <div class="selection">
+      <div class="field">
+        <label for="codigoSeleccionado">Locker seleccionado</label>
+        <input id="codigoSeleccionado" readonly placeholder="Selecciona un locker en el inventario">
+      </div>
+      <div class="field">
+        <label for="nuevoEstado">Estado operativo</label>
+        <select id="nuevoEstado">
+          <option value="operativo">Operativo</option>
+          <option value="fuera_servicio">Roto / fuera de servicio</option>
+        </select>
+      </div>
+      <button id="saveBtn" class="primary" type="button">Guardar estado</button>
+    </div>
+    <div id="selectionStatus" class="status-line"></div>
+  </section>
+</main>
+
+<script>
+const API_URL = 'https://locker-app-1n42.onrender.com/api';
+let lockers = [];
+let seleccionado = null;
+
+const $ = id => document.getElementById(id);
+
+function mostrarMensaje(texto, tipo = 'ok') {
+  const box = $('message');
+  box.textContent = texto;
+  box.className = `message ${tipo}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => { box.className = 'message'; }, 5000);
+}
+
+function estadoVisual(locker) {
+  if (locker.estado_operativo !== 'operativo') return 'roto';
+  if (locker.asignado) return 'asignado';
+  return 'libre';
+}
+
+function textoEstado(estado) {
+  return estado === 'libre' ? 'Libre'
+    : estado === 'asignado' ? 'Asignado'
+    : 'Fuera de servicio';
+}
+
+function filtrarLockers() {
+  const q = $('buscar').value.trim().toUpperCase();
+  const cuerpo = $('filtroCuerpo').value;
+  const estado = $('filtroEstado').value;
+  return lockers.filter(l => {
+    const visual = estadoVisual(l);
+    return (!q || l.codigo.toUpperCase().includes(q))
+      && (!cuerpo || l.codigo.split('-')[0] === cuerpo)
+      && (!estado || visual === estado);
+  });
+}
+
+function renderizar() {
+  const grid = $('lockerGrid');
+  const lista = filtrarLockers();
+
+  $('totalCount').textContent = lockers.length;
+  $('libreCount').textContent = lockers.filter(l => estadoVisual(l) === 'libre').length;
+  $('asignadoCount').textContent = lockers.filter(l => estadoVisual(l) === 'asignado').length;
+  $('rotoCount').textContent = lockers.filter(l => estadoVisual(l) === 'roto').length;
+
+  if (!lista.length) {
+    grid.innerHTML = '<div class="empty">No hay lockers que coincidan con los filtros.</div>';
+    return;
+  }
+
+  grid.innerHTML = lista.map(l => {
+    const estado = estadoVisual(l);
+    const selected = seleccionado === l.codigo ? ' seleccionado' : '';
+    return `<button type="button" class="locker ${estado}${selected}" data-codigo="${l.codigo}">
+      <span class="code">${l.codigo}</span>
+      <span class="state">${textoEstado(estado)}</span>
+    </button>`;
+  }).join('');
+
+  grid.querySelectorAll('[data-codigo]').forEach(btn => {
+    btn.addEventListener('click', () => seleccionarLocker(btn.dataset.codigo));
+  });
+}
+
+function seleccionarLocker(codigo) {
+  const locker = lockers.find(l => l.codigo === codigo);
+  if (!locker) return;
+  seleccionado = codigo;
+  $('codigoSeleccionado').value = locker.codigo;
+  $('nuevoEstado').value = locker.estado_operativo;
+  $('selectionStatus').textContent =
+    `Estado actual: ${textoEstado(estadoVisual(locker))}` +
+    (locker.asignado ? ' · Tiene una persona asignada.' : '');
+  renderizar();
+}
+
+async function cargarLockers() {
+  $('lockerGrid').innerHTML = '<div class="empty">Cargando inventario...</div>';
+  $('refreshBtn').disabled = true;
+  try {
+    const response = await fetch(`${API_URL}/lockers/administracion`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.mensaje || `Error HTTP ${response.status}`);
+    lockers = Array.isArray(data.lockers) ? data.lockers : [];
+    llenarFiltroCuerpos();
+    renderizar();
+    if (seleccionado && lockers.some(l => l.codigo === seleccionado)) seleccionarLocker(seleccionado);
+  } catch (err) {
+    $('lockerGrid').innerHTML = '<div class="empty">No se pudo cargar el inventario.</div>';
+    mostrarMensaje(`${err.message}. Comprueba que agregaste las rutas al backend y que Render terminó el despliegue.`, 'error');
+  } finally {
+    $('refreshBtn').disabled = false;
+  }
+}
+
+function llenarFiltroCuerpos() {
+  const select = $('filtroCuerpo');
+  const anterior = select.value;
+  const cuerpos = [...new Set(lockers.map(l => l.codigo.split('-')[0]))].sort();
+  select.innerHTML = '<option value="">Todos los cuerpos</option>' +
+    cuerpos.map(c => `<option value="${c}">Cuerpo ${c}</option>`).join('');
+  if (cuerpos.includes(anterior)) select.value = anterior;
+}
+
+async function guardarEstado() {
+  if (!seleccionado) {
+    mostrarMensaje('Primero selecciona un locker.', 'error');
+    return;
+  }
+  const estado = $('nuevoEstado').value;
+  const locker = lockers.find(l => l.codigo === seleccionado);
+  if (!locker) return;
+
+  if (locker.asignado && estado === 'operativo' && locker.estado_operativo !== 'operativo') {
+    const confirmar = confirm('Este locker está asignado a una persona. ¿Quieres marcarlo como operativo igualmente? La asignación se mantendrá.');
+    if (!confirmar) return;
+  }
+
+  $('saveBtn').disabled = true;
+  $('saveBtn').textContent = 'Guardando...';
+  try {
+    const response = await fetch(`${API_URL}/lockers/${encodeURIComponent(seleccionado)}/estado`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado_operativo: estado })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.mensaje || `Error HTTP ${response.status}`);
+    mostrarMensaje(data.mensaje || 'Estado actualizado correctamente.', 'ok');
+    await cargarLockers();
+    seleccionarLocker(seleccionado);
+  } catch (err) {
+    mostrarMensaje(err.message || 'No se pudo guardar el estado.', 'error');
+  } finally {
+    $('saveBtn').disabled = false;
+    $('saveBtn').textContent = 'Guardar estado';
+  }
+}
+
+$('buscar').addEventListener('input', renderizar);
+$('filtroCuerpo').addEventListener('change', renderizar);
+$('filtroEstado').addEventListener('change', renderizar);
+$('refreshBtn').addEventListener('click', cargarLockers);
+$('saveBtn').addEventListener('click', guardarEstado);
+
+cargarLockers();
+</script>
+</body>
+</html>
