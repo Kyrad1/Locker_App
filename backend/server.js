@@ -897,18 +897,11 @@ app.put('/api/lockers/:codigo/estado', async (req, res) => {
   const { codigo } = req.params;
   const { estado_operativo } = req.body;
 
-  const estadosPermitidos = [
-  'operativo',
-  'tomado',
-  'roto_chapa',
-  'roto_puerta'
-];
-
-if (!estadosPermitidos.includes(estado_operativo)) {
-  return res.status(400).json({
-    mensaje: 'Estado inválido'
-  });
-}
+  if (!['operativo', 'fuera_servicio', 'tomado', 'roto_chapa', 'roto_puerta'].includes(estado_operativo)) {
+    return res.status(400).json({
+      mensaje: 'Estado inválido'
+    });
+  }
 
   try {
     const resultado = await pool.query(
