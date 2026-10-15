@@ -317,7 +317,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
   // ---------------------------------------------------
   locker2 =
   locker2 !== undefined && locker2 !== null
-    ? String(locker).trim()
+    ? String(locker2).trim()
     : null;
   locker =
   locker !== undefined && locker !== null
@@ -543,6 +543,13 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
     posicion++;
 
     }
+    
+    if (locker2 !== null && locker2 !== undefined) {
+    campos.push(`locker2 = $${posicion}`);
+    valores.push(locker2);
+    posicion++;
+    }
+
 
 
     if (bolsa) {
@@ -577,7 +584,7 @@ app.put('/api/usuarios/:rut/asignar', async (req, res) => {
         UPDATE usuarios
         SET ${campos.join(', ')}
         WHERE rut = $${posicion}
-        RETURNING rut, nombre, locker, bolsa, candado
+        RETURNING rut, nombre, locker,locker2, bolsa, candado
       `,
       valores
     );
