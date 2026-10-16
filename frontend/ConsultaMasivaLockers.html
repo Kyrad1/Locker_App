@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACCIONA - Consulta masiva de lockers</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;min-height:100vh;margin:0;padding:24px;display:flex;justify-content:center;align-items:center;color:#333}
+.contenedor{width:100%;max-width:820px;background:#fff;border-radius:16px;padding:34px;box-shadow:0 10px 30px rgba(0,0,0,.1);border-top:6px solid #E30613}
+.logo{text-align:center;margin-bottom:28px}
+.logo h1{color:#E30613;font-size:38px;margin:0 0 8px}
+.logo p{color:#666;margin:0}
+h2{font-size:23px;margin:0 0 10px}
+.descripcion{color:#666;line-height:1.55;margin:0 0 22px}
+.drop{border:2px dashed #ccc;border-radius:12px;padding:28px 18px;text-align:center;background:#fafafa}
+.drop strong{display:block;margin-bottom:8px;font-size:17px}
+.drop p{font-size:14px;color:#666;margin:0 0 16px}
+input[type=file]{max-width:100%;margin:4px auto}
+.acciones{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+button,a.boton{border:0;border-radius:8px;padding:12px 18px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
+.principal{background:#E30613;color:#fff;flex:1}
+.secundario{background:#eee;color:#333}
+button:disabled{opacity:.55;cursor:wait}
+.mensaje{display:none;margin-top:18px;padding:13px;border-radius:8px;line-height:1.45;overflow-wrap:anywhere}
+.error{display:block;background:#fff0f0;color:#a00000;border:1px solid #ffd0d0}
+.exito{display:block;background:#effaf1;color:#17672a;border:1px solid #c9edcf}
+.nota{margin-top:22px;padding:14px;background:#f7f7f7;border-radius:8px;font-size:13px;line-height:1.5;color:#555}
+@media(max-width:600px){body{padding:12px}.contenedor{padding:24px 18px}.logo h1{font-size:32px}.acciones{flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="contenedor">
+  <div class="logo"><h1>ACCIONA</h1><p>Gestión de Lockers</p></div>
+  <h2>Consulta masiva de lockers</h2>
+  <p class="descripcion">Sube un archivo Excel con una lista de RUT. El sistema buscará los trabajadores en la base de datos y descargará un informe con una fila por persona, sus dos lockers y el estado de la consulta.</p>
+  <form id="formulario">
+    <div class="drop">
+      <strong>Selecciona el archivo Excel</strong>
+      <p>Formato .xlsx o .xls · Máximo 2 MB · Hasta 500 RUT</p>
+      <input id="archivo" name="archivo" type="file" accept=".xlsx,.xls" required>
+    </div>
+    <div class="acciones">
+      <button id="btnGenerar" class="principal" type="submit">Generar informe Excel</button>
+      <a class="boton secundario" href="index.html">Volver al menú</a>
+    </div>
+  </form>
+  <div id="mensaje" class="mensaje" role="status" aria-live="polite"></div>
+  <div class="nota"><strong>Formato esperado:</strong> la primera hoja debe contener una columna llamada <em>RUT</em>. Si no hay encabezado, se utilizará la primera columna. Se aceptan RUT con puntos y guion o sin ellos. El archivo no modifica datos; solo consulta y genera un informe.</div>
+</main>
+<script>
+const API_URL = 'https://locker-app.onrender.com/api';
+const formulario = document.getElementById('formulario');
+const archivo = document.getElementById('archivo');
+const boton = document.getElementById('btnGenerar');
+const mensaje = document.getElementById('mensaje');
+
+formulario.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  mensaje.className = 'mensaje';
+  mensaje.style.display = 'none';
+
+  if (!archivo.files || !archivo.files.length) {
+    mostrarMensaje('Selecciona un archivo Excel antes de continuar.', true);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('archivo', archivo.files[0]);
+  boton.disabled = true;
+  boton.textContent = 'Procesando archivo…';
+
+  try {
+    const respuesta = await fetch(`${API_URL}/usuarios/consulta-masiva`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!respuesta.ok) {
+      let detalle = 'No se pudo generar el informe.';
+      try {
+        const error = await respuesta.json();
+        if (error && error.mensaje) detalle = error.mensaje;
+      } catch {}
+      throw new Error(detalle);
+    }
+
+    const blob = await respuesta.blob();
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `informe_lockers_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+
+    const total = respuesta.headers.get('X-Total-Ruts');
+    mostrarMensaje(`Informe generado correctamente${total ? `: ${total} RUT procesados` : ''}. Se descargó el archivo Excel.`, false);
+  } catch (error) {
+    mostrarMensaje(error.message || 'No se pudo conectar con el servidor. Inténtalo nuevamente.', true);
+  } finally {
+    boton.disabled = false;
+    boton.textContent = 'Generar informe Excel';
+  }
+});
+
+function mostrarMensaje(texto, esError) {
+  mensaje.textContent = texto;
+  mensaje.className = `mensaje ${esError ? 'error' : 'exito'}`;
+  mensaje.style.display = 'block';
+}
+</script>
+</body>
+</html>

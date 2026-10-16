@@ -897,7 +897,7 @@ app.put('/api/lockers/:codigo/estado', async (req, res) => {
   const { codigo } = req.params;
   const { estado_operativo } = req.body;
 
-  if (!['operativo', 'fuera_servicio', 'tomado', 'roto_chapa', 'roto_puerta'].includes(estado_operativo)) {
+  if (!['operativo', 'fuera_servicio'].includes(estado_operativo)) {
     return res.status(400).json({
       mensaje: 'Estado inválido'
     });
@@ -936,6 +936,217 @@ app.put('/api/lockers/:codigo/estado', async (req, res) => {
 
 
 // =====================================================
+
+/* =====================================================
+   CONSULTA MASIVA DE LOCKERS DESDE EXCEL
+   Entrada: archivo Excel con columna RUT
+   Salida: Excel con una fila por trabajador
+===================================================== */
+
+const multer = require('multer');
+const XLSX = require('xlsx');
+
+const cargaExcelRuts = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2 MB
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    const nombre = (file.originalname || '').toLowerCase();
+    const esExcel = nombre.endsWith('.xlsx') || nombre.endsWith('.xls');
+    if (!esExcel) {
+      return cb(new Error('Debes subir un archivo Excel .xlsx o .xls'));
+    }
+    cb(null, true);
+  }
+});
+
+function normalizarRutMasivo(valor) {
+  if (valor === null || valor === undefined) return '';
+  return String(valor)
+    .trim()
+    .toUpperCase()
+    .replace(/[.\-\s]/g, '')
+    .replace(/[^0-9K]/g, '');
+}
+
+app.post(
+  '/api/usuarios/consulta-masiva',
+  (req, res, next) => {
+    cargaExcelRuts.single('archivo')(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({
+          mensaje: error.code === 'LIMIT_FILE_SIZE'
+            ? 'El archivo supera el límite de 2 MB'
+            : error.message || 'No se pudo procesar el archivo'
+        });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          mensaje: 'Debes seleccionar un archivo Excel'
+        });
+      }
+
+      let libro;
+      try {
+        libro = XLSX.read(req.file.buffer, {
+          type: 'buffer',
+          cellDates: false
+        });
+      } catch {
+        return res.status(400).json({
+          mensaje: 'El archivo no es un Excel válido o está dañado'
+        });
+      }
+
+      const nombreHoja = libro.SheetNames[0];
+      if (!nombreHoja) {
+        return res.status(400).json({
+          mensaje: 'El archivo Excel no contiene hojas'
+        });
+      }
+
+      const hoja = libro.Sheets[nombreHoja];
+      const filas = XLSX.utils.sheet_to_json(hoja, {
+        header: 1,
+        defval: '',
+        raw: false
+      });
+
+      if (!filas.length) {
+        return res.status(400).json({
+          mensaje: 'La primera hoja del Excel está vacía'
+        });
+      }
+
+      // Busca una columna llamada RUT; si no existe, utiliza la primera columna.
+      const encabezados = filas[0].map(v => String(v || '').trim().toUpperCase());
+      let indiceRut = encabezados.findIndex(v => v === 'RUT' || v === 'RUN');
+      let inicioDatos = 0;
+
+      if (indiceRut >= 0) {
+        inicioDatos = 1;
+      } else {
+        indiceRut = 0;
+        // Si la primera celda parece un encabezado, omitir la primera fila.
+        if (['RUT', 'RUN', 'RUT TRABAJADOR', 'RUT DEL TRABAJADOR'].includes(encabezados[0])) {
+          inicioDatos = 1;
+        }
+      }
+
+      const rutsEntrada = filas
+        .slice(inicioDatos)
+        .map((fila, indice) => ({
+          filaExcel: indice + inicioDatos + 1,
+          rutOriginal: String(fila[indiceRut] ?? '').trim(),
+          rutNormalizado: normalizarRutMasivo(fila[indiceRut])
+        }))
+        .filter(item => item.rutOriginal !== '');
+
+      if (!rutsEntrada.length) {
+        return res.status(400).json({
+          mensaje: 'No se encontraron RUT en la primera columna o en la columna RUT'
+        });
+      }
+
+      if (rutsEntrada.length > 500) {
+        return res.status(400).json({
+          mensaje: 'El archivo contiene más de 500 RUT. Divide la lista en archivos más pequeños.'
+        });
+      }
+
+      const invalidos = rutsEntrada.filter(item =>
+        !/^\d{7,8}[0-9K]$/.test(item.rutNormalizado)
+      );
+
+      if (invalidos.length) {
+        return res.status(400).json({
+          mensaje: `Hay ${invalidos.length} RUT con formato inválido. Revisa las filas: ${invalidos.slice(0, 10).map(x => x.filaExcel).join(', ')}${invalidos.length > 10 ? '…' : ''}.`
+        });
+      }
+
+      const rutsUnicos = [...new Set(rutsEntrada.map(item => item.rutNormalizado))];
+
+      const resultado = await pool.query(
+        `
+          SELECT rut, nombre, locker, locker2
+          FROM usuarios
+          WHERE REGEXP_REPLACE(UPPER(TRIM(rut)), '[^0-9K]', '', 'g') = ANY($1::text[])
+        `,
+        [rutsUnicos]
+      );
+
+      const usuariosPorRut = new Map();
+      for (const usuario of resultado.rows) {
+        usuariosPorRut.set(normalizarRutMasivo(usuario.rut), usuario);
+      }
+
+      const informe = rutsEntrada.map(item => {
+        const usuario = usuariosPorRut.get(item.rutNormalizado);
+        if (!usuario) {
+          return {
+            'RUT consultado': item.rutOriginal,
+            'Nombre': '',
+            'Locker 1': '',
+            'Locker 2': '',
+            'Estado': 'RUT no encontrado'
+          };
+        }
+
+        const locker1 = String(usuario.locker || '').trim();
+        const locker2 = String(usuario.locker2 || '').trim();
+        const tieneLocker = Boolean(locker1 || locker2);
+
+        return {
+          'RUT consultado': item.rutOriginal,
+          'Nombre': usuario.nombre || '',
+          'Locker 1': locker1,
+          'Locker 2': locker2,
+          'Estado': tieneLocker ? 'Encontrado' : 'Sin locker'
+        };
+      });
+
+      const hojaInforme = XLSX.utils.json_to_sheet(informe);
+      hojaInforme['!cols'] = [
+        { wch: 20 }, { wch: 36 }, { wch: 18 }, { wch: 18 }, { wch: 22 }
+      ];
+
+      const libroInforme = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libroInforme, hojaInforme, 'Consulta masiva');
+
+      const excelSalida = XLSX.write(libroInforme, {
+        type: 'buffer',
+        bookType: 'xlsx'
+      });
+
+      const fecha = new Date().toISOString().slice(0, 10);
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="informe_lockers_${fecha}.xlsx"`
+      );
+      res.setHeader('X-Total-Ruts', String(informe.length));
+      res.send(excelSalida);
+    } catch (error) {
+      console.error('Error en consulta masiva de lockers:', error);
+      res.status(500).json({
+        mensaje: 'Ocurrió un error al generar el informe de consulta masiva'
+      });
+    }
+  }
+);
+
+// Maneja errores de carga que no hayan sido procesados en la ruta.
+
 // INICIAR SERVIDOR
 // =====================================================
 
