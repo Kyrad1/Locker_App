@@ -49,7 +49,7 @@ button:disabled{opacity:.55;cursor:wait}
   <div class="nota"><strong>Formato esperado:</strong> la primera hoja debe contener una columna llamada <em>RUT</em>. Si no hay encabezado, se utilizará la primera columna. Se aceptan RUT con puntos y guion o sin ellos. El archivo no modifica datos; solo consulta y genera un informe.</div>
 </main>
 <script>
-const API_URL = 'https://locker-app.onrender.com/api';
+const API_URL = 'https://locker-app-1n42.onrender.com/';
 const formulario = document.getElementById('formulario');
 const archivo = document.getElementById('archivo');
 const boton = document.getElementById('btnGenerar');
@@ -71,7 +71,7 @@ formulario.addEventListener('submit', async (event) => {
   boton.textContent = 'Procesando archivo…';
 
   try {
-    const respuesta = await fetch(`${API_URL}/usuarios/consulta-masiva`, {
+    const respuesta = await fetch(`${API_URL}api/usuarios/consulta-masiva`, {
       method: 'POST',
       body: formData
     });
